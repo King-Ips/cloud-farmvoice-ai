@@ -24,7 +24,7 @@ var FarmStorage = {
     return cats ? JSON.parse(cats) : [];
   },
 
-  addCategory(name) {w
+addCategory(name) {
     const categories = this.getCategories();
     const formatted = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
     if (!categories.includes(formatted)) {
