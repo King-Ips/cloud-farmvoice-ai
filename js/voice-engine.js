@@ -1,48 +1,21 @@
-// voice-engine.js
-// This file handles ALL voice in FarmVoice AI.
-// Two functions: speak() and listen()
-// Every other file uses these two functions.
-
 var VoiceEngine = {
 
-  // ── SPEAK ─────────────────────────────────────────────────────
-  // Takes any text and reads it out loud to the user.
-  // Usage: VoiceEngine.speak("Welcome to FarmVoice AI")
   speak(text) {
     return new Promise((resolve) => {
-
-      // Cancel anything currently being spoken first
       window.speechSynthesis.cancel();
-
-      // Create a new speech object
       const utterance = new SpeechSynthesisUtterance(text);
-
-      // Settings for the voice
-      utterance.lang = 'en-US';   // South African English
-      utterance.rate = 0.9;        // Slightly slower = clearer
-      utterance.pitch = 1.0;       // Normal pitch
-      utterance.volume = 1.0;      // Full volume
-
-      // When finished speaking, resolve the promise
-      // This lets us chain: speak then listen
+      utterance.lang = 'en-US';
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
       utterance.onend = () => resolve();
-
-      // If there's an error, resolve anyway so app doesn't freeze
       utterance.onerror = () => resolve();
-
-      // Start speaking
       window.speechSynthesis.speak(utterance);
     });
   },
 
-  // ── LISTEN ────────────────────────────────────────────────────
-  // Activates the microphone and returns what the user said.
-  // Usage: const response = await VoiceEngine.listen()
-
-
   listen() {
     return new Promise((resolve, reject) => {
-
       const SpeechRecognition = window.SpeechRecognition
         || window.webkitSpeechRecognition;
 
@@ -56,12 +29,16 @@ var VoiceEngine = {
       recognition.lang = 'en-US';
       recognition.interimResults = false;
       recognition.maxAlternatives = 1;
+      recognition.continuous = false;
+
+      let resolved = false;
 
       recognition.onresult = (event) => {
+        if (resolved) return;
+        resolved = true;
         const transcript = event.results[0][0].transcript;
         console.log('User said:', transcript);
 
-        // Global menu command
         if (transcript.toLowerCase().includes('menu')) {
           window.speechSynthesis.cancel();
           App.goTo('home');
@@ -76,43 +53,38 @@ var VoiceEngine = {
         console.error('Voice error:', event.error);
 
         if (event.error === 'no-speech') {
-          // No speech detected — try again automatically
-          try {
-            recognition.start();
-          } catch(e) {
-            // Already started, ignore
+          if (!resolved) {
+            recognition.stop();
+            setTimeout(() => {
+              try { recognition.start(); } catch(e) {}
+            }, 100);
           }
           return;
         }
 
         if (event.error === 'not-allowed') {
-          VoiceEngine.speak('Please allow microphone access.');
+          VoiceEngine.speak('Please allow microphone access and try again.');
           reject(event.error);
           return;
         }
 
-        reject(event.error);
+        if (!resolved) reject(event.error);
       };
 
-      recognition.onend = () => {
-        // If ended without result, restart
-        // This handles cases where recognition stops unexpectedly
-      };
-
-      recognition.start();
+      // Only one start — with small delay to avoid audio overlap
+      setTimeout(() => {
+        try {
+          recognition.start();
+        } catch(e) {
+          console.error('Recognition start error:', e);
+        }
+      }, 100);
     });
   },
 
-
-  // ── SPEAK THEN LISTEN ─────────────────────────────────────────
-  // Helper: speaks a prompt then immediately listens for response.
-  // This is used everywhere in the app.
-  // Usage: const answer = await VoiceEngine.ask("What is your name?")
-
   async ask(prompt) {
     await this.speak(prompt);
-    // Wait longer to give Chrome time to show and process mic permission
-    await new Promise(resolve => setTimeout(resolve, 800));
+    await new Promise(resolve => setTimeout(resolve, 300));
     return await this.listen();
   }
 
