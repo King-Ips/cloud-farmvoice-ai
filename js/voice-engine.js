@@ -38,33 +38,30 @@ var VoiceEngine = {
   // ── LISTEN ────────────────────────────────────────────────────
   // Activates the microphone and returns what the user said.
   // Usage: const response = await VoiceEngine.listen()
+
+
   listen() {
     return new Promise((resolve, reject) => {
 
-      // Check if the browser supports voice recognition
       const SpeechRecognition = window.SpeechRecognition
         || window.webkitSpeechRecognition;
 
       if (!SpeechRecognition) {
-        alert('Your browser does not support voice recognition. Please use Chrome.');
+        alert('Please use Chrome browser.');
         reject('not supported');
         return;
       }
 
-      // Create a new recognition object
       const recognition = new SpeechRecognition();
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
 
-      // Settings
-      recognition.lang = 'en-US';        // South African English
-      recognition.interimResults = false; // Only return final result
-      recognition.maxAlternatives = 1;    // Only return best match
-
-      // When user finishes speaking, return what they said
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         console.log('User said:', transcript);
 
-         // Global menu command — works from anywhere
+        // Global menu command
         if (transcript.toLowerCase().includes('menu')) {
           window.speechSynthesis.cancel();
           App.goTo('home');
@@ -73,39 +70,49 @@ var VoiceEngine = {
         }
 
         resolve(transcript.toLowerCase().trim());
-
-
       };
 
-      // If there's an error (e.g. no microphone)
       recognition.onerror = (event) => {
-
         console.error('Voice error:', event.error);
-        // If not-allowed, wait for user to allow then retry
+
+        if (event.error === 'no-speech') {
+          // No speech detected — try again automatically
+          try {
+            recognition.start();
+          } catch(e) {
+            // Already started, ignore
+          }
+          return;
+        }
+
         if (event.error === 'not-allowed') {
-          VoiceEngine.speak('Please allow microphone access to continue.');
+          VoiceEngine.speak('Please allow microphone access.');
           reject(event.error);
           return;
         }
-        // For network errors, just reject silently
+
         reject(event.error);
-
-
-
-
       };
 
-      // Start listening
+      recognition.onend = () => {
+        // If ended without result, restart
+        // This handles cases where recognition stops unexpectedly
+      };
+
       recognition.start();
     });
   },
+
 
   // ── SPEAK THEN LISTEN ─────────────────────────────────────────
   // Helper: speaks a prompt then immediately listens for response.
   // This is used everywhere in the app.
   // Usage: const answer = await VoiceEngine.ask("What is your name?")
+
   async ask(prompt) {
     await this.speak(prompt);
+    // Wait longer to give Chrome time to show and process mic permission
+    await new Promise(resolve => setTimeout(resolve, 800));
     return await this.listen();
   }
 

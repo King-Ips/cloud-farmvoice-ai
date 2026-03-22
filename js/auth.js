@@ -28,7 +28,7 @@ var Auth = {
       const pin = response.replace(/\D/g, '').slice(0, 4);
 
       if (pin === user.pin) {
-        await VoiceEngine.speak(`Welcome back ${user.name}. Your farm is ready.`);
+        await VoiceEngine.speak(`PIN accepted.`);
         App.goTo('home');
         Home.load();
       } else {

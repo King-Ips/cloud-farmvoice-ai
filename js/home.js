@@ -4,16 +4,13 @@ var Home = {
     const user = FarmStorage.getUser();
     if (!user) return;
 
-    // Set greeting
     const hour = new Date().getHours();
     const greeting = hour < 12 ? 'Good morning' :
                      hour < 17 ? 'Good afternoon' : 'Good evening';
 
     document.getElementById('home-greeting').textContent = greeting;
-    document.getElementById('home-username').textContent =
-      user.name + ' ' + user.surname;
+    document.getElementById('home-username').textContent = user.name + ' ' + user.surname;
 
-    // Load stats
     const categories = FarmStorage.getCategories();
     let totalAnimals = 0;
     categories.forEach(cat => {
@@ -23,7 +20,6 @@ var Home = {
     document.getElementById('stat-categories').textContent = categories.length;
     document.getElementById('stat-animals').textContent = totalAnimals;
 
-    // Vaccination alerts
     const alerts = Vaccine.getAllAlerts();
     document.getElementById('stat-vaccines').textContent = alerts.length;
 
@@ -33,46 +29,36 @@ var Home = {
         `${alerts.length} animal${alerts.length > 1 ? 's' : ''} due for vaccination`;
     }
 
-    // Load recent animals on screen
     this.loadRecentAnimals(categories);
-
-    // Speak welcome then menu
     this.speakMenu(user, totalAnimals, categories.length, alerts.length);
   },
 
   async speakMenu(user, totalAnimals, totalCategories, totalAlerts) {
+    let message = `Hello ${user.name}. `;
 
-
-        // Only say hello — no welcome back, no stats unless useful
     if (totalAlerts > 0) {
-      await VoiceEngine.speak(`Hello ${user.name}. You have ${totalAlerts} vaccination${totalAlerts > 1 ? 's' : ''} due.`);
-    } else {
-      await VoiceEngine.speak(`Hello ${user.name}.`);
+      message += `You have ${totalAlerts} vaccination${totalAlerts > 1 ? 's' : ''} due. `;
     }
 
-    // Only mention animals if they have some
     if (totalAnimals > 0) {
-      await VoiceEngine.speak(`You have ${totalAnimals} animal${totalAnimals !== 1 ? 's' : ''} on your farm.`);
+      message += `You have ${totalAnimals} animal${totalAnimals !== 1 ? 's' : ''} on your farm. `;
     }
 
-    // Read menu
-    await VoiceEngine.speak(
-      'What would you like to do? ' +
-      'Say 1 for My Livestock. ' +
-      'Say 2 for AI Assistant. ' +
-      'Say 3 to Add an Animal.'
-    );
+    message += 'What would you like to do? Say 1 for My Livestock. Say 2 for AI Assistant. Say 3 to Add an Animal.';
 
+    await VoiceEngine.speak(message);
     this.listenForMenuChoice();
-
-
   },
-
 
   async listenForMenuChoice() {
     try {
       const choice = await VoiceEngine.listen();
       console.log('Menu choice:', choice);
+
+      if (choice.includes('menu')) {
+        Home.load();
+        return;
+      }
 
       if (choice.includes('1') || choice.includes('livestock') || choice.includes('animals')) {
         App.goTo('livestock');
@@ -84,7 +70,7 @@ var Home = {
         Assistant.voiceInput();
 
       } else if (choice.includes('3') || choice.includes('add')) {
-        await VoiceEngine.speak('Which livestock category? Say cows, goats, chickens, or sheep.');
+        await VoiceEngine.speak('Which livestock category? Say cows, goats, sheep, or chickens.');
         const catChoice = await VoiceEngine.listen();
         const formatted = catChoice.charAt(0).toUpperCase() + catChoice.slice(1).toLowerCase();
         FarmStorage.addCategory(formatted);
@@ -93,14 +79,13 @@ var Home = {
         Animal.startAdd();
 
       } else {
-        await VoiceEngine.speak('Sorry I did not understand. Say 1, 2, or 3.');
+        await VoiceEngine.speak('Sorry I did not understand. Say 1 for My Livestock, 2 for AI Assistant, or 3 to Add an Animal.');
         this.listenForMenuChoice();
       }
 
     } catch (e) {
       console.error('Menu error:', e);
-      // Microphone error — wait and try again silently
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise(r => setTimeout(r, 1000));
       this.listenForMenuChoice();
     }
   },
@@ -117,8 +102,7 @@ var Home = {
     });
 
     if (allAnimals.length === 0) {
-      container.innerHTML =
-        '<div class="empty-state">No animals yet. Say 3 to add your first animal.</div>';
+      container.innerHTML = '<div class="empty-state">No animals yet. Say 3 to add your first animal.</div>';
       return;
     }
 
