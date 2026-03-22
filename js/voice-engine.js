@@ -18,7 +18,7 @@ var VoiceEngine = {
       const utterance = new SpeechSynthesisUtterance(text);
 
       // Settings for the voice
-      utterance.lang = 'en-ZA';   // South African English
+      utterance.lang = 'en-US';   // South African English
       utterance.rate = 0.9;        // Slightly slower = clearer
       utterance.pitch = 1.0;       // Normal pitch
       utterance.volume = 1.0;      // Full volume
@@ -55,7 +55,7 @@ var VoiceEngine = {
       const recognition = new SpeechRecognition();
 
       // Settings
-      recognition.lang = 'en-ZA';        // South African English
+      recognition.lang = 'en-US';        // South African English
       recognition.interimResults = false; // Only return final result
       recognition.maxAlternatives = 1;    // Only return best match
 
