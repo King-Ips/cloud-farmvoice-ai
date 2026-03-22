@@ -17,6 +17,7 @@ var Auth = {
   async autoVoiceLogin() {
     const user = FarmStorage.getUser();
     await VoiceEngine.speak(`Welcome back ${user.name}. Please say your 4 digit PIN.`);
+    await new Promise(resolve => setTimeout(resolve, 1000));
     await this.listenForPin();
   },
 

@@ -62,14 +62,37 @@ var VoiceEngine = {
       // When user finishes speaking, return what they said
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
-        console.log('User said:', transcript); // Shows in console for debugging
+        console.log('User said:', transcript);
+
+         // Global menu command — works from anywhere
+        if (transcript.toLowerCase().includes('menu')) {
+          window.speechSynthesis.cancel();
+          App.goTo('home');
+          Home.load();
+          return;
+        }
+
         resolve(transcript.toLowerCase().trim());
+
+
       };
 
       // If there's an error (e.g. no microphone)
       recognition.onerror = (event) => {
+
         console.error('Voice error:', event.error);
+        // If not-allowed, wait for user to allow then retry
+        if (event.error === 'not-allowed') {
+          VoiceEngine.speak('Please allow microphone access to continue.');
+          reject(event.error);
+          return;
+        }
+        // For network errors, just reject silently
         reject(event.error);
+
+
+
+
       };
 
       // Start listening
