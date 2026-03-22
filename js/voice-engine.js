@@ -29,14 +29,16 @@ var VoiceEngine = {
       recognition.lang = 'en-US';
       recognition.interimResults = false;
       recognition.maxAlternatives = 1;
-      recognition.continuous = false;
+      recognition.continuous = true;
 
       let resolved = false;
 
       recognition.onresult = (event) => {
         if (resolved) return;
         resolved = true;
-        const transcript = event.results[0][0].transcript;
+        recognition.stop();
+
+        const transcript = event.results[event.results.length - 1][0].transcript;
         console.log('User said:', transcript);
 
         if (transcript.toLowerCase().includes('menu')) {
@@ -53,17 +55,12 @@ var VoiceEngine = {
         console.error('Voice error:', event.error);
 
         if (event.error === 'no-speech') {
-          if (!resolved) {
-            recognition.stop();
-            setTimeout(() => {
-              try { recognition.start(); } catch(e) {}
-            }, 100);
-          }
+          // Keep going — continuous mode handles this
           return;
         }
 
         if (event.error === 'not-allowed') {
-          VoiceEngine.speak('Please allow microphone access and try again.');
+          VoiceEngine.speak('Please allow microphone access.');
           reject(event.error);
           return;
         }
@@ -71,7 +68,6 @@ var VoiceEngine = {
         if (!resolved) reject(event.error);
       };
 
-      // Only one start — with small delay to avoid audio overlap
       setTimeout(() => {
         try {
           recognition.start();
