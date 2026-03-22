@@ -1,6 +1,6 @@
 var ClaudeAPI = {
 
-  API_KEY: 'AIzaSyAArBBPou4V8PHFuf02ifeuI-EA5en5Ha0',
+  API_KEY: CONFIG.GEMINI_KEY,
   MODEL: 'gemini-2.5-flash',
 
   getURL() {
