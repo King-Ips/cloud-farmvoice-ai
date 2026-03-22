@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>FarmVoice AI</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ── LOADING SCREEN ─────────────────────────────────────── -->
+  <div id="screen-loading" class="screen active">
+    <div class="loading-content">
+      <div class="app-logo">🌾</div>
+      <h1 class="app-title">FarmVoice AI</h1>
+      <p class="app-tagline">Your farm. Your voice. Your AI.</p>
+      <div class="loading-spinner"></div>
+    </div>
+  </div>
+
+  <!-- ── AUTH SCREEN ────────────────────────────────────────── -->
+  <div id="screen-auth" class="screen">
+
+    <!-- Login View -->
+    <div id="view-login" class="view active">
+      <div class="screen-header">
+        <div class="app-logo-small">🌾</div>
+        <h2>Welcome Back</h2>
+        <p>Say your PIN or type it below</p>
+      </div>
+      <div class="card">
+        <div class="pin-display" id="pin-display">_ _ _ _</div>
+        <div class="pin-pad">
+          <button class="pin-btn" onclick="Auth.pinPress('1')">1</button>
+          <button class="pin-btn" onclick="Auth.pinPress('2')">2</button>
+          <button class="pin-btn" onclick="Auth.pinPress('3')">3</button>
+          <button class="pin-btn" onclick="Auth.pinPress('4')">4</button>
+          <button class="pin-btn" onclick="Auth.pinPress('5')">5</button>
+          <button class="pin-btn" onclick="Auth.pinPress('6')">6</button>
+          <button class="pin-btn" onclick="Auth.pinPress('7')">7</button>
+          <button class="pin-btn" onclick="Auth.pinPress('8')">8</button>
+          <button class="pin-btn" onclick="Auth.pinPress('9')">9</button>
+          <button class="pin-btn pin-clear" onclick="Auth.pinClear()">⌫</button>
+          <button class="pin-btn" onclick="Auth.pinPress('0')">0</button>
+          <button class="pin-btn pin-submit" onclick="Auth.pinSubmit()">✓</button>
+        </div>
+        <button class="btn-voice" onclick="Auth.voiceLogin()">
+          🎤 Login by Voice
+        </button>
+      </div>
+    </div>
+
+    <!-- Register View -->
+    <div id="view-register" class="view">
+      <div class="screen-header">
+        <div class="app-logo-small">🌾</div>
+        <h2>Create Account</h2>
+        <p>Let's set up your farm</p>
+      </div>
+      <div class="card">
+        <div class="voice-prompt" id="register-prompt">
+          Press the mic to get started
+        </div>
+        <button class="btn-voice btn-large" onclick="Auth.startRegistration()">
+          🎤 Start Voice Setup
+        </button>
+        <div class="progress-dots" id="register-progress">
+          <span class="dot active"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── HOME SCREEN ────────────────────────────────────────── -->
+  <div id="screen-home" class="screen">
+    <div class="top-bar">
+      <div>
+        <div class="greeting" id="home-greeting">Good morning</div>
+        <div class="username" id="home-username">Farmer</div>
+      </div>
+      <button class="icon-btn" onclick="App.goTo('assistant')">🤖</button>
+    </div>
+
+    <!-- Alert banner -->
+    <div class="alert-banner" id="alert-banner" style="display:none">
+      <span>⚠️</span>
+      <span id="alert-text">Vaccination due</span>
+    </div>
+
+    <!-- Stats row -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-number" id="stat-animals">0</div>
+        <div class="stat-label">Animals</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="stat-categories">0</div>
+        <div class="stat-label">Categories</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="stat-vaccines">0</div>
+        <div class="stat-label">Due Vaccines</div>
+      </div>
+    </div>
+
+    <!-- Quick actions -->
+    <div class="section-title">Quick Actions</div>
+    <div class="action-grid">
+      <button class="action-btn" onclick="App.goTo('livestock')">
+        <span class="action-icon">🐄</span>
+        <span>My Livestock</span>
+      </button>
+      <button class="action-btn" onclick="App.goTo('assistant')">
+        <span class="action-icon">🤖</span>
+        <span>AI Assistant</span>
+      </button>
+      <button class="action-btn" onclick="Home.voiceCommand()">
+        <span class="action-icon">🎤</span>
+        <span>Voice Command</span>
+      </button>
+      <button class="action-btn" onclick="App.goTo('animal-add')">
+        <span class="action-icon">➕</span>
+        <span>Add Animal</span>
+      </button>
+    </div>
+
+    <!-- Recent animals -->
+    <div class="section-title">My Animals</div>
+    <div id="recent-animals" class="animal-list">
+      <div class="empty-state">No animals added yet. Tap Add Animal to start.</div>
+    </div>
+
+    <nav class="bottom-nav">
+      <button class="nav-btn active" onclick="App.goTo('home')">🏠<span>Home</span></button>
+      <button class="nav-btn" onclick="App.goTo('livestock')">🐄<span>Livestock</span></button>
+      <button class="nav-btn" onclick="App.goTo('assistant')">🤖<span>Assistant</span></button>
+    </nav>
+  </div>
+
+  <!-- ── LIVESTOCK SCREEN ───────────────────────────────────── -->
+  <div id="screen-livestock" class="screen">
+    <div class="top-bar">
+      <button class="back-btn" onclick="App.goTo('home')">←</button>
+      <h2>My Livestock</h2>
+      <button class="icon-btn" onclick="Livestock.addCategory()">＋</button>
+    </div>
+
+    <div id="category-list" class="category-list">
+      <div class="empty-state">No categories yet. Tap + to add one.</div>
+    </div>
+
+    <button class="fab" onclick="Livestock.addCategory()">＋</button>
+
+    <nav class="bottom-nav">
+      <button class="nav-btn" onclick="App.goTo('home')">🏠<span>Home</span></button>
+      <button class="nav-btn active" onclick="App.goTo('livestock')">🐄<span>Livestock</span></button>
+      <button class="nav-btn" onclick="App.goTo('assistant')">🤖<span>Assistant</span></button>
+    </nav>
+  </div>
+
+  <!-- ── ANIMAL LIST SCREEN ─────────────────────────────────── -->
+  <div id="screen-animal-list" class="screen">
+    <div class="top-bar">
+      <button class="back-btn" onclick="App.goTo('livestock')">←</button>
+      <h2 id="animal-list-title">Animals</h2>
+      <button class="icon-btn" onclick="Animal.startAdd()">＋</button>
+    </div>
+    <div id="animal-list" class="animal-list"></div>
+    <button class="fab" onclick="Animal.startAdd()">＋</button>
+    <nav class="bottom-nav">
+      <button class="nav-btn" onclick="App.goTo('home')">🏠<span>Home</span></button>
+      <button class="nav-btn active" onclick="App.goTo('livestock')">🐄<span>Livestock</span></button>
+      <button class="nav-btn" onclick="App.goTo('assistant')">🤖<span>Assistant</span></button>
+    </nav>
+  </div>
+
+  <!-- ── ADD ANIMAL SCREEN ──────────────────────────────────── -->
+  <div id="screen-animal-add" class="screen">
+    <div class="top-bar">
+      <button class="back-btn" onclick="App.goBack()">←</button>
+      <h2>Add Animal</h2>
+      <div></div>
+    </div>
+    <div class="card">
+      <div class="voice-prompt" id="add-animal-prompt">
+        Press the mic to add an animal by voice
+      </div>
+      <button class="btn-voice btn-large" onclick="Animal.startAdd()">
+        🎤 Add by Voice
+      </button>
+
+      <!-- Photo upload -->
+      <div class="photo-section">
+        <div class="photo-preview" id="photo-preview">
+          <span>📷</span>
+          <span>Take or upload photo</span>
+        </div>
+        <input type="file" id="photo-input" accept="image/*" capture="environment"
+               onchange="Vision.handlePhoto(this)" style="display:none">
+        <button class="btn-secondary" onclick="document.getElementById('photo-input').click()">
+          📷 Add Photo
+        </button>
+        <div id="breed-result" class="breed-result" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ANIMAL PROFILE SCREEN ─────────────────────────────── -->
+  <div id="screen-animal-profile" class="screen">
+    <div class="top-bar">
+      <button class="back-btn" onclick="App.goBack()">←</button>
+      <h2 id="profile-name">Animal Profile</h2>
+      <div></div>
+    </div>
+    <div class="profile-photo" id="profile-photo">🐄</div>
+    <div class="card profile-card">
+      <div class="profile-row">
+        <span class="profile-label">Name</span>
+        <span class="profile-value" id="profile-name-val">—</span>
+      </div>
+      <div class="profile-row">
+        <span class="profile-label">Date of Birth</span>
+        <span class="profile-value" id="profile-dob">—</span>
+      </div>
+      <div class="profile-row">
+        <span class="profile-label">Age</span>
+        <span class="profile-value" id="profile-age">—</span>
+      </div>
+      <div class="profile-row">
+        <span class="profile-label">Breed</span>
+        <span class="profile-value" id="profile-breed">—</span>
+      </div>
+      <div class="profile-row">
+        <span class="profile-label">Colour</span>
+        <span class="profile-value" id="profile-colour">—</span>
+      </div>
+      <div class="profile-row">
+        <span class="profile-label">Category</span>
+        <span class="profile-value" id="profile-category">—</span>
+      </div>
+    </div>
+    <div class="card vaccine-card">
+      <div class="section-title">Vaccination Schedule</div>
+      <div id="profile-vaccines"></div>
+    </div>
+    <button class="btn-voice" onclick="Animal.readProfile()">
+      🔊 Read Profile Aloud
+    </button>
+  </div>
+
+  <!-- ── ASSISTANT SCREEN ───────────────────────────────────── -->
+  <div id="screen-assistant" class="screen">
+    <div class="top-bar">
+      <button class="back-btn" onclick="App.goTo('home')">←</button>
+      <h2>AI Assistant</h2>
+      <div></div>
+    </div>
+
+    <div class="chat-container" id="chat-container">
+      <div class="chat-bubble assistant-bubble">
+        Hello! I am your FarmVoice AI assistant. Ask me anything about farming,
+        animal health, or livestock management.
+      </div>
+    </div>
+
+    <div class="chat-input-area">
+      <button class="mic-btn" id="mic-btn" onclick="Assistant.voiceInput()">🎤</button>
+      <input type="text" id="chat-input" placeholder="Ask a farming question..."
+             onkeypress="if(event.key==='Enter') Assistant.sendMessage()">
+      <button class="send-btn" onclick="Assistant.sendMessage()">➤</button>
+    </div>
+
+  </div>
+
+  <!-- ── SCRIPTS ────────────────────────────────────────────── -->
+
+  <script>
+  // This key is set here for GitHub Pages
+  // Never put keys in js files that are pushed to GitHub
+  window.GEMINI_KEY = 'AIzaSyBSQZFqGRn4N926nB7yf_HlId6JFyKTQqs';
+  </script>
+
+  <script src="js/storage.js"></script>
+  <script src="js/voice-engine.js"></script>
+  
+  <script src="js/claude-api.js"></script>
+  <script src="js/vaccine.js"></script>
+  <script src="js/vision.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/home.js"></script>
+  <script src="js/livestock.js"></script>
+  <script src="js/animal.js"></script>
+  <script src="js/assistant.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
