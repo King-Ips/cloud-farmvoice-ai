@@ -52,8 +52,21 @@ var Home = {
 
   async listenForMenuChoice() {
     try {
+      document.getElementById('home-greeting').textContent = '🎤 Listening...';
+      
       const choice = await VoiceEngine.listen();
       console.log('Menu choice:', choice);
+
+      // Ignore empty or too short responses
+      if (!choice || choice.length < 1) {
+        this.listenForMenuChoice();
+        return;
+      }
+
+      // Reset greeting
+      document.getElementById('home-greeting').textContent = 
+        new Date().getHours() < 12 ? 'Good morning' : 
+        new Date().getHours() < 17 ? 'Good afternoon' : 'Good evening';
 
       if (choice.includes('menu')) {
         Home.load();
@@ -79,7 +92,7 @@ var Home = {
         Animal.startAdd();
 
       } else {
-        await VoiceEngine.speak('Sorry I did not understand. Say 1 for My Livestock, 2 for AI Assistant, or 3 to Add an Animal.');
+        await VoiceEngine.speak(`I heard ${choice}. Say livestock, assistant, or add.`);
         this.listenForMenuChoice();
       }
 

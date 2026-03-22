@@ -35,10 +35,14 @@ var VoiceEngine = {
 
       recognition.onresult = (event) => {
         if (resolved) return;
+        
+        const transcript = event.results[event.results.length - 1][0].transcript.trim();
+        
+        // Ignore empty results
+        if (!transcript || transcript.length === 0) return;
+        
         resolved = true;
         recognition.stop();
-
-        const transcript = event.results[event.results.length - 1][0].transcript;
         console.log('User said:', transcript);
 
         if (transcript.toLowerCase().includes('menu')) {
