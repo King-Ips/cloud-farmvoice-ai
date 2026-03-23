@@ -1,5 +1,10 @@
 var Assistant = {
 
+  async load() {
+    await VoiceEngine.speak('AI Assistant ready. What is your farming question? You can ask about animal health, vaccination, feeding, or current farming news.');
+    this.voiceInput();
+  },
+
   async sendMessage() {
     const input = document.getElementById('chat-input');
     const message = input.value.trim();
@@ -21,6 +26,8 @@ var Assistant = {
     } catch (e) {
       micBtn.classList.remove('listening');
       console.error(e);
+      await new Promise(r => setTimeout(r, 1000));
+      this.voiceInput();
     }
   },
 
@@ -34,15 +41,14 @@ var Assistant = {
 
     await VoiceEngine.speak(answer);
 
-    // Ask for follow up
     try {
-      const followUp = await VoiceEngine.ask('Do you have another question? Or say menu to go back.');
+      const followUp = await VoiceEngine.ask('Do you have another question? Say yes to ask again or say menu to go back.');
       if (followUp.includes('menu')) {
         App.goTo('home');
         Home.load();
-      } else if (!followUp.includes('no') && followUp.length > 3) {
-        this.addBubble(followUp, 'user');
-        await this.getResponse(followUp);
+      } else if (followUp.includes('yes')) {
+        await VoiceEngine.speak('What is your question?');
+        this.voiceInput();
       } else {
         App.goTo('home');
         Home.load();

@@ -80,7 +80,7 @@ var Home = {
       } else if (choice.includes('2') || choice.includes('assistant') || choice.includes('ai')) {
         App.goTo('assistant');
         await VoiceEngine.speak('AI Assistant ready. What is your farming question?');
-        Assistant.voiceInput();
+        Assistant.load();
 
       } else if (choice.includes('3') || choice.includes('add')) {
         await VoiceEngine.speak('Which livestock category? Say cows, goats, sheep, or chickens.');

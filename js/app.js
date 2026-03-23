@@ -20,6 +20,17 @@ var App = {
     this.goTo(this.previousScreen);
   },
 
+  logout() {
+    const user = FarmStorage.getUser();
+    const name = user ? user.name : 'Farmer';
+    window.speechSynthesis.cancel();
+    VoiceEngine.speak(`${name}, you are logging out. Goodbye.`).then(() => {
+      FarmStorage.clearAll();
+      location.reload();
+    });
+  },
+
+
   async start() {
     this.goTo('loading');
     await new Promise(resolve => setTimeout(resolve, 1500));
