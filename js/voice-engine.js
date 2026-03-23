@@ -70,7 +70,7 @@ var VoiceEngine = {
           App.goTo('home');
           Home.load();
         });
-      }, 12000);
+      }, 30000);
 
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
