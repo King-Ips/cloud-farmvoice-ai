@@ -52,8 +52,15 @@ var VoiceEngine = {
           return;
         }
 
+        if (transcript.toLowerCase().includes('logout')) {
+          window.speechSynthesis.cancel();
+          App.logout();
+          return;
+        }
+
         resolve(transcript.toLowerCase().trim());
       };
+
 
       recognition.onerror = (event) => {
         console.error('Voice error:', event.error);
