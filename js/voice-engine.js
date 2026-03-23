@@ -4,7 +4,13 @@ var VoiceEngine = {
   _recognition: null,
   _idleTimer: null,
 
+
   speak(text) {
+    // Reset idle timer whenever we speak
+    if (this._idleTimer) {
+      clearTimeout(this._idleTimer);
+      this._idleTimer = null;
+    }
     return new Promise((resolve) => {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
@@ -70,7 +76,7 @@ var VoiceEngine = {
           App.goTo('home');
           Home.load();
         });
-      }, 30000);
+      }, 12000);
 
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
