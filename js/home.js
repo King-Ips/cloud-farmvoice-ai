@@ -44,7 +44,7 @@ var Home = {
       message += `You have ${totalAnimals} animal${totalAnimals !== 1 ? 's' : ''} on your farm. `;
     }
 
-    message += 'What would you like to do? Say 1 for My Livestock. Say 2 for AI Assistant. Say 3 to Add an Animal.';
+    message += 'What would you like to do? Say 1 for My Livestock. Say 2 for AI Assistant. Say logout to exit.';
 
     await VoiceEngine.speak(message);
     this.listenForMenuChoice();
@@ -52,47 +52,28 @@ var Home = {
 
   async listenForMenuChoice() {
     try {
-      document.getElementById('home-greeting').textContent = '🎤 Listening...';
-      
       const choice = await VoiceEngine.listen();
       console.log('Menu choice:', choice);
-
-      // Ignore empty or too short responses
-      if (!choice || choice.length < 1) {
-        this.listenForMenuChoice();
-        return;
-      }
-
-      // Reset greeting
-      document.getElementById('home-greeting').textContent = 
-        new Date().getHours() < 12 ? 'Good morning' : 
-        new Date().getHours() < 17 ? 'Good afternoon' : 'Good evening';
 
       if (choice.includes('menu')) {
         Home.load();
         return;
       }
 
-      if (choice.includes('1') || choice.includes('livestock') || choice.includes('animals')) {
+      if (choice.includes('1') || choice.includes('livestock') ||
+          choice.includes('animals') || choice.includes('manage') ||
+          choice.includes('add')) {
         App.goTo('livestock');
         Livestock.load();
 
-      } else if (choice.includes('2') || choice.includes('assistant') || choice.includes('ai')) {
+      } else if (choice.includes('2') || choice.includes('assistant') ||
+                 choice.includes('ai') || choice.includes('help') ||
+                 choice.includes('question')) {
         App.goTo('assistant');
-        await VoiceEngine.speak('AI Assistant ready. What is your farming question?');
         Assistant.load();
 
-      } else if (choice.includes('3') || choice.includes('add')) {
-        await VoiceEngine.speak('Which livestock category? Say cows, goats, sheep, or chickens.');
-        const catChoice = await VoiceEngine.listen();
-        const formatted = catChoice.charAt(0).toUpperCase() + catChoice.slice(1).toLowerCase();
-        FarmStorage.addCategory(formatted);
-        App.currentCategory = formatted;
-        App.goTo('animal-add');
-        Animal.startAdd();
-
       } else {
-        await VoiceEngine.speak(`I heard ${choice}. Say livestock, assistant, or add.`);
+        await VoiceEngine.speak('Say 1 for My Livestock or 2 for AI Assistant.');
         this.listenForMenuChoice();
       }
 
