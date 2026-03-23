@@ -1,5 +1,9 @@
 var VoiceEngine = {
 
+  // Track active recognition to prevent conflicts
+  _recognition: null,
+  _idleTimer: null,
+
   speak(text) {
     return new Promise((resolve) => {
       window.speechSynthesis.cancel();
@@ -14,7 +18,22 @@ var VoiceEngine = {
     });
   },
 
+  // Stop any active listener
+  stopListening() {
+    if (this._recognition) {
+      try { this._recognition.stop(); } catch(e) {}
+      this._recognition = null;
+    }
+    if (this._idleTimer) {
+      clearTimeout(this._idleTimer);
+      this._idleTimer = null;
+    }
+  },
+
   listen() {
+    // Stop any existing listener first
+    this.stopListening();
+
     return new Promise((resolve, reject) => {
       const SpeechRecognition = window.SpeechRecognition
         || window.webkitSpeechRecognition;
@@ -26,85 +45,95 @@ var VoiceEngine = {
       }
 
       const recognition = new SpeechRecognition();
+      this._recognition = recognition;
+
       recognition.lang = 'en-US';
       recognition.interimResults = false;
       recognition.maxAlternatives = 1;
       recognition.continuous = false;
 
       let resolved = false;
-      let idleTimer = null;
 
-      // Auto return to menu after 15 seconds of silence
-      idleTimer = setTimeout(() => {
-        if (!resolved) {
-          resolved = true;
-          recognition.stop();
-          console.log('Idle timeout — returning to menu');
-          App.goTo('home');
-          Home.load();
-        }
-      }, 15000);
-
-      recognition.onresult = (event) => {
+      const done = (fn) => {
         if (resolved) return;
         resolved = true;
-        clearTimeout(idleTimer);
+        this._recognition = null;
+        clearTimeout(this._idleTimer);
+        fn();
+      };
 
+      // Auto return to menu after 12 seconds of silence
+      this._idleTimer = setTimeout(() => {
+        done(() => {
+          try { recognition.stop(); } catch(e) {}
+          console.log('Idle — returning to menu');
+          App.goTo('home');
+          Home.load();
+        });
+      }, 12000);
+
+      recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         console.log('User said:', transcript);
 
-        // Global commands work from anywhere
-        if (transcript.toLowerCase().includes('menu')) {
-          window.speechSynthesis.cancel();
-          App.goTo('home');
-          Home.load();
+        const t = transcript.toLowerCase().trim();
+
+        // Global commands
+        if (t.includes('menu')) {
+          done(() => {
+            window.speechSynthesis.cancel();
+            App.goTo('home');
+            Home.load();
+          });
           return;
         }
 
-        if (transcript.toLowerCase().includes('logout') ||
-            transcript.toLowerCase().includes('log out') ||
-            transcript.toLowerCase().includes('sign out')) {
-          window.speechSynthesis.cancel();
-          App.logout();
+        if (t.includes('logout') || t.includes('log out') || t.includes('sign out')) {
+          done(() => {
+            window.speechSynthesis.cancel();
+            App.logout();
+          });
           return;
         }
 
-        resolve(transcript.toLowerCase().trim());
+        done(() => resolve(t));
       };
 
       recognition.onerror = (event) => {
         console.error('Voice error:', event.error);
 
         if (event.error === 'no-speech') {
+          // Restart silently on no-speech
           if (!resolved) {
-            recognition.stop();
-            setTimeout(() => {
-              try { recognition.start(); } catch(e) {}
-            }, 100);
+            try { recognition.start(); } catch(e) {}
           }
           return;
         }
 
-        if (event.error === 'not-allowed') {
-          clearTimeout(idleTimer);
-          VoiceEngine.speak('Please allow microphone access.');
-          reject(event.error);
+        if (event.error === 'aborted') {
+          // Aborted intentionally — do nothing
           return;
         }
 
-        if (!resolved) {
-          clearTimeout(idleTimer);
-          reject(event.error);
+        if (event.error === 'not-allowed') {
+          done(() => {
+            VoiceEngine.speak('Please allow microphone access.');
+            reject(event.error);
+          });
+          return;
         }
+
+        done(() => reject(event.error));
       };
 
+      // Small delay before starting
       setTimeout(() => {
         try {
           recognition.start();
         } catch(e) {
-          console.error('Recognition start error:', e);
+          console.error('Start error:', e);
         }
-      }, 100);
+      }, 150);
     });
   },
 
