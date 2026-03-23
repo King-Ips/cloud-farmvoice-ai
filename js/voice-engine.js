@@ -29,22 +29,31 @@ var VoiceEngine = {
       recognition.lang = 'en-US';
       recognition.interimResults = false;
       recognition.maxAlternatives = 1;
-      recognition.continuous = true;
+      recognition.continuous = false;
 
       let resolved = false;
+      let idleTimer = null;
+
+      // Auto return to menu after 15 seconds of silence
+      idleTimer = setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          recognition.stop();
+          console.log('Idle timeout — returning to menu');
+          App.goTo('home');
+          Home.load();
+        }
+      }, 15000);
 
       recognition.onresult = (event) => {
         if (resolved) return;
-        
-        const transcript = event.results[event.results.length - 1][0].transcript.trim();
-        
-        // Ignore empty results
-        if (!transcript || transcript.length === 0) return;
-        
         resolved = true;
-        recognition.stop();
+        clearTimeout(idleTimer);
+
+        const transcript = event.results[0][0].transcript;
         console.log('User said:', transcript);
 
+        // Global commands work from anywhere
         if (transcript.toLowerCase().includes('menu')) {
           window.speechSynthesis.cancel();
           App.goTo('home');
@@ -52,7 +61,9 @@ var VoiceEngine = {
           return;
         }
 
-        if (transcript.toLowerCase().includes('logout')) {
+        if (transcript.toLowerCase().includes('logout') ||
+            transcript.toLowerCase().includes('log out') ||
+            transcript.toLowerCase().includes('sign out')) {
           window.speechSynthesis.cancel();
           App.logout();
           return;
@@ -61,22 +72,30 @@ var VoiceEngine = {
         resolve(transcript.toLowerCase().trim());
       };
 
-
       recognition.onerror = (event) => {
         console.error('Voice error:', event.error);
 
         if (event.error === 'no-speech') {
-          // Keep going — continuous mode handles this
+          if (!resolved) {
+            recognition.stop();
+            setTimeout(() => {
+              try { recognition.start(); } catch(e) {}
+            }, 100);
+          }
           return;
         }
 
         if (event.error === 'not-allowed') {
+          clearTimeout(idleTimer);
           VoiceEngine.speak('Please allow microphone access.');
           reject(event.error);
           return;
         }
 
-        if (!resolved) reject(event.error);
+        if (!resolved) {
+          clearTimeout(idleTimer);
+          reject(event.error);
+        }
       };
 
       setTimeout(() => {
