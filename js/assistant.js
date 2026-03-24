@@ -42,16 +42,21 @@ var Assistant = {
     await VoiceEngine.speak(answer);
 
     try {
-      const followUp = await VoiceEngine.ask('Do you have another question? Say yes to ask again or say menu to go back.');
+
+      const followUp = await VoiceEngine.ask('Say yes for another question, repeat to hear the answer again, or menu to go back.');
       if (followUp.includes('menu')) {
         App.goTo('home');
         Home.load();
+      } else if (followUp.includes('repeat')) {
+        await VoiceEngine.speak(answer);
+        await this.getResponse(message);
       } else if (followUp.includes('yes')) {
         await VoiceEngine.speak('What is your question?');
         this.voiceInput();
       } else {
         App.goTo('home');
         Home.load();
+      
       }
     } catch (e) {
       console.error(e);

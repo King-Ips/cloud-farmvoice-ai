@@ -5,53 +5,49 @@ var Livestock = {
     const container = document.getElementById('category-list');
     container.innerHTML = '';
 
-    // Calculate totals
     let totalAnimals = 0;
     categories.forEach(cat => {
       totalAnimals += FarmStorage.getAnimals(cat).length;
     });
 
     if (categories.length === 0) {
-      container.innerHTML = '<div class="empty-state">No categories yet. Say add category to get started.</div>';
-      this.speakSummary(categories, totalAnimals);
-      return;
-    }
-
-    // Build category cards on screen
-    categories.forEach(cat => {
-      const animals = FarmStorage.getAnimals(cat);
-      const card = document.createElement('div');
-      card.className = 'category-card';
-      card.onclick = () => this.openCategory(cat);
-      card.innerHTML = `
-        <div class="category-icon">${this.getIcon(cat)}</div>
-        <div class="category-info">
-          <div class="category-name">${cat}</div>
-          <div class="category-count">${animals.length} animal${animals.length !== 1 ? 's' : ''}</div>
-        </div>
-        <div style="font-size:20px;color:#6B7280">›</div>
-      `;
-      container.appendChild(card);
-    });
-
-    this.speakSummary(categories, totalAnimals);
-  },
-
-  async speakSummary(categories, totalAnimals) {
-    // Build summary message
-    let message = '';
-
-    if (categories.length === 0) {
-      message = 'You have no livestock categories yet.';
+      container.innerHTML = '<div class="empty-state">No categories yet. Say add to get started.</div>';
     } else {
-      message = `You have ${categories.length} livestock categor${categories.length !== 1 ? 'ies' : 'y'} and ${totalAnimals} animal${totalAnimals !== 1 ? 's' : ''} in total. `;
       categories.forEach(cat => {
-        const count = FarmStorage.getAnimals(cat).length;
-        message += `${cat}: ${count} animal${count !== 1 ? 's' : ''}. `;
+        const animals = FarmStorage.getAnimals(cat);
+        const card = document.createElement('div');
+        card.className = 'category-card';
+        card.onclick = () => this.openCategory(cat);
+        card.innerHTML = `
+          <div class="category-icon">${this.getIcon(cat)}</div>
+          <div class="category-info">
+            <div class="category-name">${cat}</div>
+            <div class="category-count">${animals.length} animal${animals.length !== 1 ? 's' : ''}</div>
+          </div>
+          <div style="font-size:20px;color:#6B7280">›</div>
+        `;
+        container.appendChild(card);
       });
     }
 
-    message += 'What would you like to do? Say add category, add animal, read all, a category name, or menu to go back.';
+    this.speakLivestockMenu(categories, totalAnimals);
+  },
+
+  async speakLivestockMenu(categories, totalAnimals) {
+    let message = '';
+
+    if (categories.length === 0) {
+      message = 'You have no livestock yet. ';
+    } else {
+      message = `You have ${totalAnimals} animal${totalAnimals !== 1 ? 's' : ''} across ${categories.length} categor${categories.length !== 1 ? 'ies' : 'y'}. `;
+      categories.forEach(cat => {
+        const count = FarmStorage.getAnimals(cat).length;
+        message += `${cat}: ${count}. `;
+      });
+    }
+
+    message += 'Say add to add an animal. Say read all to hear everything. Say delete to remove an animal or category. Say repeat to hear this again. Say menu to go back.';
+
     await VoiceEngine.speak(message);
     this.listenForChoice(categories);
   },
@@ -67,44 +63,42 @@ var Livestock = {
         return;
       }
 
-      if (choice.includes('add category')) {
-        await this.addCategory();
+      if (choice.includes('repeat')) {
+        let totalAnimals = 0;
+        categories.forEach(cat => totalAnimals += FarmStorage.getAnimals(cat).length);
+        await this.speakLivestockMenu(categories, totalAnimals);
         return;
       }
 
-      if (choice.includes('add animal') || choice.includes('add')) {
+      if (choice.includes('add')) {
         await this.handleAddAnimal(categories);
         return;
       }
 
-      if (choice.includes('read all') || choice.includes('read everything')) {
+      if (choice.includes('read all') || choice.includes('read everything') || choice.includes('read')) {
         await this.readAllAnimals(categories);
         return;
       }
 
-      // Check if user said a category name
-      const match = categories.find(cat =>
-        choice.includes(cat.toLowerCase())
-      );
-
-      if (match) {
-        this.openCategory(match);
+      if (choice.includes('delete') || choice.includes('remove')) {
+        await this.handleDelete(categories);
         return;
       }
 
-      await VoiceEngine.speak('Sorry I did not understand. Say add category, add animal, read all, a category name, or menu.');
+      await VoiceEngine.speak('Say add, read all, delete, repeat, or menu.');
       this.listenForChoice(categories);
 
     } catch (e) {
-      console.error(e);
-      await new Promise(r => setTimeout(r, 1000));
+      console.error('Livestock error:', e);
+      if (e === 'aborted') return;
+      await new Promise(r => setTimeout(r, 800));
       this.listenForChoice(categories);
     }
   },
 
   async handleAddAnimal(categories) {
     if (categories.length === 0) {
-      await VoiceEngine.speak('You have no categories yet. Please add a category first. Say the category name like cows or goats.');
+      await VoiceEngine.speak('You have no categories yet. What type of livestock do you have? Say cows, goats, sheep, or chickens.');
       const catName = await VoiceEngine.listen();
       const formatted = catName.charAt(0).toUpperCase() + catName.slice(1).toLowerCase();
       FarmStorage.addCategory(formatted);
@@ -115,9 +109,7 @@ var Livestock = {
       const catList = categories.join(', ');
       await VoiceEngine.speak(`Which category? You have ${catList}.`);
       const catChoice = await VoiceEngine.listen();
-      const match = categories.find(cat =>
-        catChoice.includes(cat.toLowerCase())
-      );
+      const match = categories.find(cat => catChoice.includes(cat.toLowerCase()));
       if (match) {
         App.currentCategory = match;
       } else {
@@ -132,8 +124,8 @@ var Livestock = {
 
   async readAllAnimals(categories) {
     if (categories.length === 0) {
-      await VoiceEngine.speak('You have no animals yet.');
-      this.load();
+      await VoiceEngine.speak('You have no animals yet. Say add to add your first animal.');
+      this.listenForChoice(categories);
       return;
     }
 
@@ -156,22 +148,100 @@ var Livestock = {
       }
     });
 
-    message += `Total: ${totalCount} animal${totalCount !== 1 ? 's' : ''}. Say menu to go back or say a category name to open it.`;
+    message += `Total: ${totalCount} animal${totalCount !== 1 ? 's' : ''}. Say repeat to hear again or say menu to go back.`;
     await VoiceEngine.speak(message);
     this.listenForChoice(categories);
   },
 
-  async addCategory() {
-    try {
-      const name = await VoiceEngine.ask('What type of livestock? Say cows, goats, sheep, chickens, or any other type.');
-      const formatted = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
-      FarmStorage.addCategory(formatted);
-      await VoiceEngine.speak(`${formatted} added to your farm.`);
-      this.load();
-    } catch (e) {
-      console.error(e);
-      this.load();
+  async handleDelete(categories) {
+    if (categories.length === 0) {
+      await VoiceEngine.speak('You have nothing to delete yet.');
+      this.listenForChoice(categories);
+      return;
     }
+
+    await VoiceEngine.speak('Would you like to delete an animal or a category? Say animal or category.');
+    const choice = await VoiceEngine.listen();
+
+    if (choice.includes('animal')) {
+      await this.deleteAnimal(categories);
+    } else if (choice.includes('category')) {
+      await this.deleteCategory(categories);
+    } else {
+      await VoiceEngine.speak('Say animal or category.');
+      await this.handleDelete(categories);
+    }
+  },
+
+  async deleteAnimal(categories) {
+    await VoiceEngine.speak('Which category is the animal in?');
+    const catChoice = await VoiceEngine.listen();
+    const cat = categories.find(c => catChoice.includes(c.toLowerCase()));
+
+    if (!cat) {
+      await VoiceEngine.speak('I did not recognise that category. Going back.');
+      this.load();
+      return;
+    }
+
+    const animals = FarmStorage.getAnimals(cat);
+    if (animals.length === 0) {
+      await VoiceEngine.speak(`You have no animals in ${cat}.`);
+      this.load();
+      return;
+    }
+
+    const names = animals.map(a => a.name).join(', ');
+    await VoiceEngine.speak(`You have ${names} in ${cat}. Which animal would you like to delete?`);
+    const nameChoice = await VoiceEngine.listen();
+    const animal = animals.find(a => nameChoice.includes(a.name.toLowerCase()));
+
+    if (!animal) {
+      await VoiceEngine.speak('I did not recognise that animal name. Going back.');
+      this.load();
+      return;
+    }
+
+    await VoiceEngine.speak(`Are you sure you want to delete ${animal.name}? Say yes or no.`);
+    const confirm = await VoiceEngine.listen();
+
+    if (confirm.includes('yes')) {
+      const updated = animals.filter(a => a.id !== animal.id);
+      FarmStorage.saveAnimals(cat, updated);
+      await VoiceEngine.speak(`${animal.name} has been deleted.`);
+    } else {
+      await VoiceEngine.speak('Cancelled.');
+    }
+
+    this.load();
+  },
+
+  async deleteCategory(categories) {
+    const catList = categories.join(', ');
+    await VoiceEngine.speak(`You have ${catList}. Which category would you like to delete?`);
+    const choice = await VoiceEngine.listen();
+    const cat = categories.find(c => choice.includes(c.toLowerCase()));
+
+    if (!cat) {
+      await VoiceEngine.speak('I did not recognise that category. Going back.');
+      this.load();
+      return;
+    }
+
+    const animals = FarmStorage.getAnimals(cat);
+    await VoiceEngine.speak(`Are you sure you want to delete ${cat} and all ${animals.length} animals in it? Say yes or no.`);
+    const confirm = await VoiceEngine.listen();
+
+    if (confirm.includes('yes')) {
+      const updated = categories.filter(c => c !== cat);
+      FarmStorage.saveCategories(updated);
+      FarmStorage.saveAnimals(cat, []);
+      await VoiceEngine.speak(`${cat} has been deleted.`);
+    } else {
+      await VoiceEngine.speak('Cancelled.');
+    }
+
+    this.load();
   },
 
   openCategory(category) {

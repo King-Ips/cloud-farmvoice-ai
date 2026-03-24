@@ -1,10 +1,11 @@
 var ClaudeAPI = {
 
-  API_KEY: window.GEMINI_KEY || '',
   MODEL: 'gemini-2.5-flash',
 
   getURL() {
-    return `https://generativelanguage.googleapis.com/v1beta/models/${this.MODEL}:generateContent?key=${this.API_KEY}`;
+    // Read key at call time so it's always fresh
+    const key = window.GEMINI_KEY || '';
+    return `https://generativelanguage.googleapis.com/v1beta/models/${this.MODEL}:generateContent?key=${key}`;
   },
 
   async askClaude(question) {
@@ -17,25 +18,17 @@ var ClaudeAPI = {
             parts: [{
               text: `You are FarmVoice AI, a helpful farming assistant for blind and
                      visually impaired farmers in South Africa.
-                     Keep all answers short, clear and spoken-friendly.
-                     Maximum 3 sentences. No bullet points. No markdown.
-                     Speak like you are talking to a farmer directly.`
+                     Keep answers short, clear and spoken-friendly.
+                     Maximum 2 sentences. No bullet points. No markdown.
+                     Speak directly to the farmer.`
             }]
           },
-          contents: [{
-            parts: [{ text: question }]
-          }]
+          contents: [{ parts: [{ text: question }] }]
         })
       });
 
       const data = await response.json();
-      console.log('Gemini response:', data);
-
-      if (data.error) {
-        console.error('Gemini error:', data.error.message);
-        return 'Sorry, I could not get an answer right now.';
-      }
-
+      if (data.error) return 'Sorry, I could not get an answer right now.';
       const text = data.candidates[0].content.parts[0].text;
       return text.replace(/[*#_`]/g, '').trim();
 
@@ -60,11 +53,9 @@ var ClaudeAPI = {
                 }
               },
               {
-                text: `Look at this livestock animal.
-                       Tell me the breed and colour in one short sentence.
+                text: `Look at this livestock animal. Tell me the breed and colour in one short sentence.
                        Example: "This appears to be a brown Bonsmara cow."
-                       If you cannot identify the breed say:
-                       "This appears to be a mixed breed animal."`
+                       If you cannot identify the breed say: "This appears to be a mixed breed animal."`
               }
             ]
           }]
@@ -72,19 +63,11 @@ var ClaudeAPI = {
       });
 
       const data = await response.json();
-      console.log('Vision response:', data);
-
-      if (data.error) {
-        console.error('Vision error:', data.error.message);
-        return 'Could not identify the animal.';
-      }
-
+      if (data.error) return 'Could not identify the animal.';
       return data.candidates[0].content.parts[0].text;
 
     } catch (error) {
-      console.error('Vision API error:', error);
       return 'Could not analyze the image. Please try again.';
     }
   }
-
 };
