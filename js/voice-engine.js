@@ -1,12 +1,8 @@
 var VoiceEngine = {
-
-  // Track active recognition to prevent conflicts
   _recognition: null,
   _idleTimer: null,
 
-
   speak(text) {
-    // Reset idle timer whenever we speak
     if (this._idleTimer) {
       clearTimeout(this._idleTimer);
       this._idleTimer = null;
@@ -14,7 +10,7 @@ var VoiceEngine = {
     return new Promise((resolve) => {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'en-US';
+      utterance.lang = 'en-US';        // ← Change to 'en-ZA' later for South African accent
       utterance.rate = 1.0;
       utterance.pitch = 1.0;
       utterance.volume = 1.0;
@@ -24,7 +20,6 @@ var VoiceEngine = {
     });
   },
 
-  // Stop any active listener
   stopListening() {
     if (this._recognition) {
       try { this._recognition.stop(); } catch(e) {}
@@ -37,13 +32,10 @@ var VoiceEngine = {
   },
 
   listen() {
-    // Stop any existing listener first
     this.stopListening();
 
     return new Promise((resolve, reject) => {
-      const SpeechRecognition = window.SpeechRecognition
-        || window.webkitSpeechRecognition;
-
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
         alert('Please use Chrome browser.');
         reject('not supported');
@@ -64,27 +56,24 @@ var VoiceEngine = {
         if (resolved) return;
         resolved = true;
         this._recognition = null;
-        clearTimeout(this._idleTimer);
+        if (this._idleTimer) clearTimeout(this._idleTimer);
         fn();
       };
 
-      // Auto return to menu after 12 seconds of silence
       this._idleTimer = setTimeout(() => {
         done(() => {
           try { recognition.stop(); } catch(e) {}
-          console.log('Idle — returning to menu');
+          console.log('Idle timeout — returning to menu');
           App.goTo('home');
           Home.load();
         });
       }, 12000);
 
       recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
+        const transcript = event.results[0][0].transcript.trim();
         console.log('User said:', transcript);
+        const t = transcript.toLowerCase();
 
-        const t = transcript.toLowerCase().trim();
-
-        // Global commands
         if (t.includes('menu')) {
           done(() => {
             window.speechSynthesis.cancel();
@@ -93,7 +82,6 @@ var VoiceEngine = {
           });
           return;
         }
-
         if (t.includes('logout') || t.includes('log out') || t.includes('sign out')) {
           done(() => {
             window.speechSynthesis.cancel();
@@ -109,18 +97,10 @@ var VoiceEngine = {
         console.error('Voice error:', event.error);
 
         if (event.error === 'no-speech') {
-          // Restart silently on no-speech
-          if (!resolved) {
-            try { recognition.start(); } catch(e) {}
-          }
+          if (!resolved) try { recognition.start(); } catch(e) {}
           return;
         }
-
-        if (event.error === 'aborted') {
-          // Aborted intentionally — do nothing
-          return;
-        }
-
+        if (event.error === 'aborted') return;
         if (event.error === 'not-allowed') {
           done(() => {
             VoiceEngine.speak('Please allow microphone access.');
@@ -128,25 +108,18 @@ var VoiceEngine = {
           });
           return;
         }
-
         done(() => reject(event.error));
       };
 
-      // Small delay before starting
       setTimeout(() => {
-        try {
-          recognition.start();
-        } catch(e) {
-          console.error('Start error:', e);
-        }
+        try { recognition.start(); } catch(e) { console.error('Start error:', e); }
       }, 150);
     });
   },
 
   async ask(prompt) {
     await this.speak(prompt);
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise(r => setTimeout(r, 300));
     return await this.listen();
   }
-
 };

@@ -5,17 +5,14 @@ var Home = {
     if (!user) return;
 
     const hour = new Date().getHours();
-    const greeting = hour < 12 ? 'Good morning' :
-                     hour < 17 ? 'Good afternoon' : 'Good evening';
+    const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
     document.getElementById('home-greeting').textContent = greeting;
-    document.getElementById('home-username').textContent = user.name + ' ' + user.surname;
+    document.getElementById('home-username').textContent = `${user.name} ${user.surname}`;
 
     const categories = FarmStorage.getCategories();
     let totalAnimals = 0;
-    categories.forEach(cat => {
-      totalAnimals += FarmStorage.getAnimals(cat).length;
-    });
+    categories.forEach(cat => totalAnimals += FarmStorage.getAnimals(cat).length);
 
     document.getElementById('stat-categories').textContent = categories.length;
     document.getElementById('stat-animals').textContent = totalAnimals;
@@ -25,62 +22,54 @@ var Home = {
 
     if (alerts.length > 0) {
       document.getElementById('alert-banner').style.display = 'flex';
-      document.getElementById('alert-text').textContent =
-        `${alerts.length} animal${alerts.length > 1 ? 's' : ''} due for vaccination`;
+      document.getElementById('alert-text').textContent = `${alerts.length} animal${alerts.length > 1 ? 's' : ''} due for vaccination`;
+    } else {
+      document.getElementById('alert-banner').style.display = 'none';
     }
 
     this.loadRecentAnimals(categories);
-    this.speakMenu(user, totalAnimals, categories.length, alerts.length);
+    this.speakMainMenu(user, totalAnimals, categories.length, alerts.length);
   },
 
-  async speakMenu(user, totalAnimals, totalCategories, totalAlerts) {
+  async speakMainMenu(user, totalAnimals, totalCategories, totalAlerts) {
     let message = `Hello ${user.name}. `;
-
-    if (totalAlerts > 0) {
-      message += `You have ${totalAlerts} vaccination${totalAlerts > 1 ? 's' : ''} due. `;
-    }
-
-    if (totalAnimals > 0) {
-      message += `You have ${totalAnimals} animal${totalAnimals !== 1 ? 's' : ''} on your farm. `;
-    }
-
+    if (totalAlerts > 0) message += `You have ${totalAlerts} vaccination${totalAlerts > 1 ? 's' : ''} due. `;
+    message += `You have ${totalAnimals} animal${totalAnimals !== 1 ? 's' : ''} in ${totalCategories} categor${totalCategories !== 1 ? 'ies' : 'y'}. `;
     message += 'What would you like to do? Say 1 for My Livestock. Say 2 for AI Assistant. Say logout to exit.';
 
     await VoiceEngine.speak(message);
-    this.listenForMenuChoice();
+    this.listenForMainChoice();
   },
 
-  async listenForMenuChoice() {
+  async listenForMainChoice() {
     try {
       const choice = await VoiceEngine.listen();
-      console.log('Menu choice:', choice);
+      const t = choice.toLowerCase().trim();
 
-      if (choice.includes('menu')) {
+      if (t.includes('menu')) {
         Home.load();
         return;
       }
 
-      if (choice.includes('1') || choice.includes('livestock') ||
-          choice.includes('animals') || choice.includes('manage') ||
-          choice.includes('add')) {
+      if (t.includes('1') || t.includes('livestock') || t.includes('animals') || t.includes('manage')) {
         App.goTo('livestock');
         Livestock.load();
-
-      } else if (choice.includes('2') || choice.includes('assistant') ||
-                 choice.includes('ai') || choice.includes('help') ||
-                 choice.includes('question')) {
+      } 
+      else if (t.includes('2') || t.includes('assistant') || t.includes('ai') || t.includes('help') || t.includes('question')) {
         App.goTo('assistant');
         Assistant.load();
-
-      } else {
-        await VoiceEngine.speak('Say 1 for My Livestock or 2 for AI Assistant.');
-        this.listenForMenuChoice();
+      } 
+      else if (t.includes('logout') || t.includes('log out')) {
+        App.logout();
+      } 
+      else {
+        await VoiceEngine.speak('Sorry, say 1 for My Livestock or 2 for AI Assistant.');
+        this.listenForMainChoice();
       }
-
     } catch (e) {
-      console.error('Menu error:', e);
-      await new Promise(r => setTimeout(r, 1000));
-      this.listenForMenuChoice();
+      console.error('Main menu error:', e);
+      await new Promise(r => setTimeout(r, 800));
+      this.listenForMainChoice();
     }
   },
 
@@ -96,7 +85,7 @@ var Home = {
     });
 
     if (allAnimals.length === 0) {
-      container.innerHTML = '<div class="empty-state">No animals yet. Say 3 to add your first animal.</div>';
+      container.innerHTML = '<div class="empty-state">No animals yet.<br>Say "1" then "add animal" to get started.</div>';
       return;
     }
 
@@ -113,13 +102,12 @@ var Home = {
 
     const age = Vaccine.getAge(animal.dob);
     const alerts = Vaccine.getAlerts(animal);
-    const badge = alerts.length > 0 ?
-      `<span class="vaccine-badge">💉 Vaccine due</span>` : '';
+    const badge = alerts.length > 0 ? `<span class="vaccine-badge">💉 Vaccine due</span>` : '';
 
     card.innerHTML = `
       <div class="animal-avatar">
-        ${animal.photo ?
-          `<img src="${animal.photo}" alt="${animal.name}">` :
+        ${animal.photo ? 
+          `<img src="${animal.photo}" alt="${animal.name}">` : 
           Livestock.getIcon(animal.category)}
       </div>
       <div class="animal-info">
@@ -130,11 +118,5 @@ var Home = {
       ${badge}
     `;
     return card;
-  },
-
-  async voiceCommand() {
-    await VoiceEngine.speak('What would you like to do? Say 1 for Livestock, 2 for AI Assistant, or 3 to Add an Animal.');
-    this.listenForMenuChoice();
   }
-
 };
