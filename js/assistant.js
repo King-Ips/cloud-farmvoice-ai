@@ -43,7 +43,7 @@ var Assistant = {
       await new Promise(r => setTimeout(r, 1000));
       await this.voiceInput(retries + 1);
     }
-  }
+  },
 
   async getResponse(message) {
     const thinking = this.addBubble('Thinking...', 'assistant');
