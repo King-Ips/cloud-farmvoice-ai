@@ -92,7 +92,7 @@ var VoiceEngine = {
         const r = new SR();
         this._recognition = r;
         r.lang = 'en-US';
-        r.interimResults = true;  // Capture interim for flow detection
+        r.interimResults = false;  // Do NOT capture interim results
         r.maxAlternatives = 1;
         r.continuous = false;
 
@@ -115,25 +115,25 @@ var VoiceEngine = {
         r.onresult = (e) => {
           if (!e.results || !e.results.length) return;
 
-          // Get the latest result
+          // Get the latest result - only final results will be available
           const latestResult = e.results[e.results.length - 1];
+          
+          // Safety check: only process final results
+          if (!latestResult.isFinal) return;
+          
           const transcript = latestResult[0].transcript.trim().toLowerCase();
+          if (!transcript) return;
+          
+          console.log('Got final result:', transcript);
 
-          // Only process FINAL results, not interim ones
-          if (latestResult.isFinal) {
-            if (!transcript) return;
-            
-            console.log('Got final result:', transcript);
-
-            // Check for global commands first
-            if (this.checkGlobal(transcript)) {
-              finish(() => {});
-              return;
-            }
-
-            // Got a final result - resolve immediately and stop listening
-            finish(() => resolve(transcript));
+          // Check for global commands first
+          if (this.checkGlobal(transcript)) {
+            finish(() => {});
+            return;
           }
+
+          // Got a final result - resolve immediately and stop listening
+          finish(() => resolve(transcript));
         };
 
         r.onerror = (e) => {
