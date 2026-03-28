@@ -80,6 +80,12 @@ var Animal = {
         category: category || 'General'
       });
 
+      if (!animal) {
+        await VoiceEngine.speak('Failed to save animal. Please try again.');
+        await this.startAdd();
+        return;
+      }
+
       this.currentAnimal = { ...animal, category: category || 'General' };
       await VoiceEngine.speak(`${name} has been saved successfully.`);
 

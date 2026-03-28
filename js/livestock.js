@@ -53,7 +53,14 @@ var Livestock = {
     this.listenForChoice(categories);
   },
 
-  async listenForChoice(categories) {
+  async listenForChoice(categories, retries = 0) {
+    if (retries > 3) {
+      await VoiceEngine.speak('No valid command. Returning to home.');
+      App.goTo('home');
+      Home.load();
+      return;
+    }
+    
     try {
       const choice = await VoiceEngine.listen(20000);
       console.log('Livestock choice:', choice);
@@ -72,12 +79,12 @@ var Livestock = {
       }
 
       await VoiceEngine.speak('Say add to add an animal, farm updates to hear all animals, or delete to remove one.');
-      this.listenForChoice(categories);
+      await this.listenForChoice(categories, retries + 1);
 
     } catch (e) {
       if (e === 'aborted') return;
       await new Promise(r => setTimeout(r, 800));
-      this.listenForChoice(categories);
+      await this.listenForChoice(categories, retries + 1);
     }
   },
 
@@ -179,7 +186,7 @@ var Livestock = {
 
       const names = animals.map(a => a.name).join(', ');
       await VoiceEngine.speak(`You have ${names} in ${cat}. Which animal would you like to delete?`);
-      const nameChoice = await VoiceEngine.listen();
+      const nameChoice = await VoiceEngine.listen(20000);
       const animal = animals.find(a => nameChoice.includes(a.name.toLowerCase()));
       if (!animal) { await VoiceEngine.speak('Animal not found.'); this.load(); return; }
 

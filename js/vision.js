@@ -1,8 +1,23 @@
 var Vision = {
 
   async handlePhoto(input) {
+    if (!input || !input.files || !input.files[0]) {
+      await VoiceEngine.speak('No photo selected. Please try again.');
+      return;
+    }
     const file = input.files[0];
-    if (!file) return;
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      await VoiceEngine.speak('Please select an image file.');
+      return;
+    }
+    
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      await VoiceEngine.speak('Image is too large. Please use a smaller photo.');
+      return;
+    }
 
     await VoiceEngine.speak('Photo received. Analyzing the animal. Please wait.');
 
