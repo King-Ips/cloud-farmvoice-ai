@@ -44,8 +44,12 @@ var Home = {
     if (totalAnimals > 0) {
       message += `You have ${totalAnimals} animal${totalAnimals !== 1 ? 's' : ''} on your farm. `;
     }
+    
+    // Announce crops and tracker as well
+    const crops = Crops ? Crops.getCrops() : [];
+    if (crops.length > 0) message += `You have ${crops.length} planted crop${crops.length !== 1 ? 's' : ''}. `;
 
-    message += `To manage your livestock, say livestock. For farming questions and assistance, say AI assistant.`;
+    message += `To manage your livestock, say livestock. To manage your crops, say crops. For the activity tracker, say tracker. For farming questions, say AI assistant.`;
 
     await VoiceEngine.speak(message);
     this.listenForMainChoice();
@@ -69,16 +73,22 @@ var Home = {
       } else if (t.includes('ai') || t.includes('assistant') || t.includes('help')) {
         App.goTo('assistant');
         Assistant.load();
+      } else if (t.includes('crop') || t.includes('plants')) {
+        App.goTo('crops');
+        Crops.load();
+      } else if (t.includes('track') || t.includes('activity')) {
+        App.goTo('tracker');
+        Tracker.load();
       } else {
-        await VoiceEngine.speak('Say livestock to manage your farm, or say AI assistant for farming questions.');
+        await VoiceEngine.speak('Say livestock, crops, tracker, or AI assistant.');
         await this.listenForMainChoice(retries + 1);
       }
     } catch (e) {
-      if (e === 'aborted') return;
+      if (e === 'aborted' || e === 'handled_global') return;
       await new Promise(r => setTimeout(r, 800));
       await this.listenForMainChoice(retries + 1);
     }
-  }
+  },
 
   loadRecentAnimals(categories) {
     const container = document.getElementById('recent-animals');

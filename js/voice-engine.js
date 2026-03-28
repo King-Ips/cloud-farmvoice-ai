@@ -128,7 +128,7 @@ var VoiceEngine = {
 
           // Check for global commands first
           if (this.checkGlobal(transcript)) {
-            finish(() => {});
+            finish(() => reject('handled_global'));
             return;
           }
 

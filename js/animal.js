@@ -108,7 +108,7 @@ var Animal = {
 
     } catch (e) {
       console.error('Add animal error:', e);
-      if (e === 'aborted') return;
+      if (e === 'aborted' || e === 'handled_global') return;
       await VoiceEngine.speak('Something went wrong. Going back to livestock.');
       App.goTo('livestock');
       Livestock.load();
@@ -191,7 +191,7 @@ var Animal = {
         await this.readProfile(retries + 1);
       }
     } catch (e) {
-      if (e === 'aborted') return;
+      if (e === 'aborted' || e === 'handled_global') return;
       await new Promise(r => setTimeout(r, 800));
       await this.readProfile(retries + 1);
     }

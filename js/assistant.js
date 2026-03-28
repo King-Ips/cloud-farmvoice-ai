@@ -39,6 +39,7 @@ var Assistant = {
       await this.getResponse(message);
     } catch (e) {
       micBtn.classList.remove('listening');
+      if (e === 'handled_global') return;
       console.error('Voice input error:', e);
       await new Promise(r => setTimeout(r, 1000));
       await this.voiceInput(retries + 1);
@@ -73,6 +74,7 @@ var Assistant = {
         Home.load();
       }
     } catch (e) {
+      if (e === 'handled_global') return;
       console.error('Follow up error:', e);
       App.goTo('home');
       Home.load();
