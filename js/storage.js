@@ -5,10 +5,23 @@ var FarmStorage = {
 
   // ── USER ──────────────────────────────────────────────────────
   saveUser(name, surname, pinOrHash) {
-    // Handle both plain PIN and pre-hashed PIN
+    // Input validation
+    if (!name || !surname || !pinOrHash) {
+      console.error('Invalid user data: missing fields');
+      return false;
+    }
+    if (typeof name !== 'string' || typeof surname !== 'string') {
+      console.error('Invalid user data: invalid types');
+      return false;
+    }
+    
+    name = name.trim().slice(0, 50);
+    surname = surname.trim().slice(0, 50);
+    
     const pinHash = pinOrHash.length > 8 ? pinOrHash : this.hashPin(pinOrHash);
     const user = { name, surname, pinHash };
     localStorage.setItem('fv_user', JSON.stringify(user));
+    return true;
   },
 
   getUser() {
@@ -35,8 +48,14 @@ var FarmStorage = {
   },
 
   addCategory(name) {
+    if (!name || typeof name !== 'string' || name.trim().length === 0) {
+      console.error('Invalid category name');
+      return [];
+    }
     const categories = this.getCategories();
-    const formatted = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+    const formatted = name.trim().charAt(0).toUpperCase() + name.trim().slice(1).toLowerCase().slice(0, 50);
+    
+    // Prevent duplicate categories
     if (!categories.includes(formatted)) {
       categories.push(formatted);
       this.saveCategories(categories);
@@ -57,6 +76,21 @@ var FarmStorage = {
   },
 
   addAnimal(category, animal) {
+    // Input validation
+    if (!category || typeof category !== 'string' || !animal || typeof animal !== 'object') {
+      console.error('Invalid animal data');
+      return null;
+    }
+    if (!animal.name || typeof animal.name !== 'string' || animal.name.trim().length === 0) {
+      console.error('Animal must have a name');
+      return null;
+    }
+    
+    // Sanitize animal data
+    animal.name = animal.name.trim().slice(0, 100);
+    animal.breed = (animal.breed || '').toString().trim().slice(0, 100);
+    animal.notes = (animal.notes || '').toString().trim().slice(0, 500);
+    
     const animals = this.getAnimals(category);
     animal.id = Date.now().toString();
     animals.push(animal);
@@ -80,6 +114,94 @@ var FarmStorage = {
 
   clearAll() {
     localStorage.clear();
+  },
+
+  // ── BACKUP & EXPORT ──────────────────────────────────
+  exportData() {
+    try {
+      const backup = {
+        version: '1.0',
+        exportDate: new Date().toISOString(),
+        user: this.getUser(),
+        categories: this.getCategories(),
+        animals: {}
+      };
+
+      this.getCategories().forEach(cat => {
+        backup.animals[cat] = this.getAnimals(cat);
+      });
+
+      return JSON.stringify(backup, null, 2);
+    } catch (e) {
+      console.error('Export failed:', e);
+      return null;
+    }
+  },
+
+  importData(jsonString) {
+    try {
+      const backup = JSON.parse(jsonString);
+      
+      // Validate backup structure
+      if (!backup.version || !backup.user) {
+        console.error('Invalid backup format');
+        return false;
+      }
+
+      // Clear existing data
+      this.clearAll();
+
+      // Restore user
+      if (backup.user && backup.user.name && backup.user.surname && backup.user.pinHash) {
+        this.saveUser(backup.user.name, backup.user.surname, backup.user.pinHash);
+      }
+
+      // Restore categories and animals
+      if (backup.categories && Array.isArray(backup.categories)) {
+        this.saveCategories(backup.categories);
+      }
+
+      if (backup.animals && typeof backup.animals === 'object') {
+        Object.keys(backup.animals).forEach(cat => {
+          const animals = backup.animals[cat];
+          if (Array.isArray(animals)) {
+            this.saveAnimals(cat, animals);
+          }
+        });
+      }
+
+      console.log('Backup restored successfully');
+      return true;
+    } catch (e) {
+      console.error('Import failed:', e);
+      return false;
+    }
+  },
+
+  downloadBackup() {
+    const data = this.exportData();
+    if (!data) {
+      console.error('Failed to export data');
+      return;
+    }
+
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `farmvoice-backup-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  },
+
+  async uploadBackup(file) {
+    try {
+      const text = await file.text();
+      return this.importData(text);
+    } catch (e) {
+      console.error('Failed to upload backup:', e);
+      return false;
+    }
   },
 
   // ── SIMPLE PIN HASHING ────────────────────────────────────

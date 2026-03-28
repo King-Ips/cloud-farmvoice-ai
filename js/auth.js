@@ -3,6 +3,28 @@ var Auth = {
   currentPin: '',
   globalInstructionsShown: false,
 
+  // ── INPUT VALIDATION HELPERS ──────────────────────
+  _validateName(name) {
+    if (!name || typeof name !== 'string') return false;
+    name = name.trim();
+    if (name.length < 2 || name.length > 50) return false;
+    return /^[a-zA-Z\s'-]+$/.test(name);
+  },
+
+  _validatePin(pin) {
+    if (!pin || typeof pin !== 'string') return false;
+    const cleaned = pin.replace(/\D/g, '');
+    return cleaned.length === 4;
+  },
+
+  _sanitizeName(name) {
+    if (!name) return '';
+    return name
+      .trim()
+      .slice(0, 50)
+      .replace(/[^a-zA-Z\s'-]/g, '');
+  },
+
   async playGlobalIntroduction() {
     const intro = `Welcome to FarmVoice AI. Before you continue, here are global commands that work anywhere in the app at any time. Say repeat to hear the current options again. Say go back to return to the previous screen. Say menu to go to the main menu. Say logout to exit the app. These commands work everywhere, always.`;
     await VoiceEngine.speak(intro);
@@ -50,7 +72,7 @@ var Auth = {
       return;
     }
     try {
-      const response = await VoiceEngine.listen();
+      const response = await VoiceEngine.listen(20000);  // 20 second timeout for PIN entry
       const pin = response.replace(/\D/g, '').slice(0, 4);
       if (FarmStorage.verifyPin(pin, user.pinHash)) {
         await VoiceEngine.speak('PIN accepted.');
@@ -117,23 +139,41 @@ var Auth = {
       if (!this.globalInstructionsShown) {
         await this.playGlobalIntroduction();
       }
-      await VoiceEngine.speak('I will help you set up your account.');
-
       prompt.textContent = 'Listening for your first name...';
       this.setDot(0);
-      const name = await VoiceEngine.ask('What is your first name?');
+      const nameRaw = await VoiceEngine.ask('What is your first name?', 25000);
+      
+      if (!this._validateName(nameRaw)) {
+        await VoiceEngine.speak('I could not understand that name. Let us try again.');
+        await this.startRegistration();
+        return;
+      }
+      const name = this._sanitizeName(nameRaw);
       prompt.textContent = `First name: ${name}`;
       await VoiceEngine.speak(`Nice to meet you ${name}.`);
 
       this.setDot(1);
       prompt.textContent = 'Listening for your surname...';
-      const surname = await VoiceEngine.ask('What is your surname?');
+      const surnameRaw = await VoiceEngine.ask('What is your surname?', 25000);
+      
+      if (!this._validateName(surnameRaw)) {
+        await VoiceEngine.speak('I could not understand that surname. Let us try again.');
+        await this.startRegistration();
+        return;
+      }
+      const surname = this._sanitizeName(surnameRaw);
       prompt.textContent = `Name: ${name} ${surname}`;
       await VoiceEngine.speak(`${name} ${surname}. Great.`);
 
       this.setDot(2);
       prompt.textContent = 'Listening for your PIN...';
-      const pinRaw = await VoiceEngine.ask('Please say a 4 digit PIN. For example: 1 2 3 4.');
+      const pinRaw = await VoiceEngine.ask('Please say a 4 digit PIN. For example: 1 2 3 4.', 25000);
+      
+      if (!this._validatePin(pinRaw)) {
+        await VoiceEngine.speak('I could not hear a clear 4 digit PIN. Let us try again.');
+        await this.startRegistration();
+        return;
+      }
       const pin = pinRaw.replace(/\D/g, '').slice(0, 4);
 
       if (pin.length < 4) {
@@ -142,7 +182,7 @@ var Auth = {
         return;
       }
 
-      const confirmRaw = await VoiceEngine.ask(`You said ${pin.split('').join(' ')}. Say yes to confirm or no to try again.`);
+      const confirmRaw = await VoiceEngine.ask(`You said ${pin.split('').join(' ')}. Say yes to confirm or no to try again.`, 20000);
       if (confirmRaw.includes('no')) {
         await VoiceEngine.speak('No problem. Let us try again.');
         await this.startRegistration();
