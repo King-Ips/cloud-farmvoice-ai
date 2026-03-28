@@ -68,6 +68,11 @@ var Vision = {
       }
     };
 
+    reader.onerror = () => {
+      console.error('Error reading file:', reader.error);
+      VoiceEngine.speak('Error reading image file. Please try again.');
+    };
+
     reader.readAsDataURL(file);
   }
 

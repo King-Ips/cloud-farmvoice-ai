@@ -98,14 +98,11 @@ var VoiceEngine = {
 
         let done = false;
         let timeoutHandle = null;
-        let silenceTimeout = null;
-        let lastFinalResult = '';
 
         const finish = (fn) => {
           if (done) return;
           done = true;
           if (timeoutHandle) clearTimeout(timeoutHandle);
-          if (silenceTimeout) clearTimeout(silenceTimeout);
           try { r.abort(); } catch(e) {}
           this._recognition = null;
           fn();
@@ -126,7 +123,6 @@ var VoiceEngine = {
           if (latestResult.isFinal) {
             if (!transcript) return;
             
-            lastFinalResult = transcript;
             console.log('Got final result:', transcript);
 
             // Check for global commands first
@@ -135,15 +131,8 @@ var VoiceEngine = {
               return;
             }
 
-            // Clear silence timeout since we got input
-            if (silenceTimeout) clearTimeout(silenceTimeout);
-
-            // Set timeout to capture this result (user might still be speaking)
-            silenceTimeout = setTimeout(() => {
-              if (!done && lastFinalResult === transcript) {
-                finish(() => resolve(transcript));
-              }
-            }, 1000); // 1 second of no new input = end of speech
+            // Got a final result - resolve immediately and stop listening
+            finish(() => resolve(transcript));
           }
         };
 
@@ -168,23 +157,15 @@ var VoiceEngine = {
         };
 
         r.onend = () => {
-          // Don't auto-restart - let silence detection handle it
-          if (!done && lastFinalResult) {
-            // Resolve with last result if available
-            finish(() => resolve(lastFinalResult));
-          } else if (!done) {
-            // No result yet - timeout
+          // Recognition ended - if not done yet, it means no results
+          if (!done) {
             finish(() => reject('No speech detected'));
           }
         };
 
         timeoutHandle = setTimeout(() => {
           if (!done) {
-            if (lastFinalResult) {
-              finish(() => resolve(lastFinalResult));
-            } else {
-              finish(() => reject('Listening timeout'));
-            }
+            finish(() => reject('Listening timeout'));
           }
         }, timeoutMs);
 

@@ -101,6 +101,15 @@ http.createServer((req, res) => {
                 res.end(JSON.stringify({ error: 'API error: ' + result.error.message }));
                 return;
               }
+              
+              // Validate API response structure
+              if (!result.candidates || !result.candidates[0] || !result.candidates[0].content || !result.candidates[0].content.parts || !result.candidates[0].content.parts[0]) {
+                log('ERROR', 'Unexpected API response structure');
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Invalid response format' }));
+                return;
+              }
+              
               const text = result.candidates[0].content.parts[0].text.replace(/[*#_`]/g, '').trim();
               res.writeHead(200, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify({ response: text }));

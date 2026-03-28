@@ -56,6 +56,11 @@ var Auth = {
 
   async autoVoiceLogin() {
     const user = FarmStorage.getUser();
+    if (!user) {
+      await VoiceEngine.speak('No account found. Please create one.');
+      await this.startRegistration();
+      return;
+    }
     if (!this.globalInstructionsShown) {
       await this.playGlobalIntroduction();
     }
@@ -189,7 +194,13 @@ var Auth = {
         return;
       }
 
-      FarmStorage.saveUser(name, surname, pin);
+      const saved = FarmStorage.saveUser(name, surname, pin);
+      if (!saved) {
+        await VoiceEngine.speak('Failed to save your account. Please try again.');
+        await this.startRegistration();
+        return;
+      }
+      
       prompt.textContent = `Welcome ${name} ${surname}!`;
       this.setDot(2);
 
