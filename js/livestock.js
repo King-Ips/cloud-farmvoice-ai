@@ -82,7 +82,7 @@ var Livestock = {
       await this.listenForChoice(categories, retries + 1);
 
     } catch (e) {
-      if (e === 'aborted') return;
+      if (e === 'aborted' || e === 'handled_global') return;
       await new Promise(r => setTimeout(r, 800));
       await this.listenForChoice(categories, retries + 1);
     }
@@ -96,7 +96,7 @@ var Livestock = {
         const formatted = catName.charAt(0).toUpperCase() + catName.slice(1).toLowerCase();
         FarmStorage.addCategory(formatted);
         App.currentCategory = formatted;
-      } catch(e) { this.load(); return; }
+      } catch(e) { if (e !== 'handled_global') this.load(); return; }
     } else if (categories.length === 1) {
       App.currentCategory = categories[0];
     } else {
@@ -112,7 +112,7 @@ var Livestock = {
           FarmStorage.addCategory(formatted);
           App.currentCategory = formatted;
         }
-      } catch(e) { this.load(); return; }
+      } catch(e) { if (e !== 'handled_global') this.load(); return; }
     }
     App.goTo('animal-add');
     Animal.startAdd();
@@ -171,7 +171,7 @@ var Livestock = {
         await VoiceEngine.speak('Say animal or category.');
         await this.handleDelete(categories);
       }
-    } catch(e) { this.load(); }
+    } catch(e) { if (e !== 'handled_global') this.load(); }
   },
 
   async deleteAnimal(categories) {
@@ -199,7 +199,7 @@ var Livestock = {
         await VoiceEngine.speak('Cancelled.');
       }
       this.load();
-    } catch(e) { this.load(); }
+    } catch(e) { if (e !== 'handled_global') this.load(); }
   },
 
   async deleteCategory(categories) {
@@ -220,7 +220,7 @@ var Livestock = {
         await VoiceEngine.speak('Cancelled.');
       }
       this.load();
-    } catch(e) { this.load(); }
+    } catch(e) { if (e !== 'handled_global') this.load(); }
   },
 
   openCategory(category) {

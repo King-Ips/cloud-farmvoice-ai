@@ -45,13 +45,55 @@ var Auth = {
   },
 
   showLogin() {
+    VoiceEngine.stopListening();
     document.getElementById('view-login').classList.add('active');
     document.getElementById('view-register').classList.remove('active');
+    const kbView = document.getElementById('view-register-keyboard');
+    if (kbView) kbView.classList.remove('active');
   },
 
   showRegister() {
+    VoiceEngine.stopListening();
     document.getElementById('view-login').classList.remove('active');
     document.getElementById('view-register').classList.add('active');
+    const kbView = document.getElementById('view-register-keyboard');
+    if (kbView) kbView.classList.remove('active');
+  },
+
+  showKeyboardRegistration() {
+    VoiceEngine.stopListening();
+    document.getElementById('view-login').classList.remove('active');
+    document.getElementById('view-register').classList.remove('active');
+    document.getElementById('view-register-keyboard').classList.add('active');
+  },
+
+  async submitKeyboardRegistration() {
+    const name = document.getElementById('reg-name').value;
+    const surname = document.getElementById('reg-surname').value;
+    const pin = document.getElementById('reg-pin').value;
+
+    if (!this._validateName(name)) {
+      alert('Please enter a valid first name.');
+      return;
+    }
+    if (!this._validateName(surname)) {
+      alert('Please enter a valid surname.');
+      return;
+    }
+    if (!this._validatePin(pin)) {
+      alert('Please enter a valid 4-digit PIN.');
+      return;
+    }
+
+    const saved = FarmStorage.saveUser(this._sanitizeName(name), this._sanitizeName(surname), pin);
+    if (!saved) {
+      alert('Failed to save your account. Please try again.');
+      return;
+    }
+
+    alert(`Account created successfully! Welcome ${name}.`);
+    this.globalInstructionsShown = true;
+    this.speakGlobalInstructions(name);
   },
 
   async autoVoiceLogin() {
@@ -84,11 +126,12 @@ var Auth = {
         await this.speakGlobalInstructions(user.name);
       } else {
         await VoiceEngine.speak('Incorrect PIN. Please try again.');
-        await this.listenForPin();
+        // Don't infinitely loop on error, let them use the pin pad
       }
     } catch (e) {
-      await VoiceEngine.speak('Could not hear you. Please try again.');
-      await this.listenForPin();
+      if (e === 'handled_global') return;
+      console.warn('Voice pin entry failed or timed out:', e);
+      // Let them use the manual PIN pad
     }
   },
 
@@ -208,6 +251,7 @@ var Auth = {
       await this.speakGlobalInstructions(name);
 
     } catch (e) {
+      if (e === 'handled_global') return;
       console.error('Registration error:', e);
       prompt.textContent = 'Something went wrong. Please try again.';
       await VoiceEngine.speak('Something went wrong. Let us try again.');

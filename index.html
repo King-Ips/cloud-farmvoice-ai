@@ -10,62 +10,65 @@
 <body>
 
   <!-- ── LOADING SCREEN ─────────────────────────────────────── -->
-  <div id="screen-loading" class="screen active">
+  <main id="screen-loading" class="screen active" role="main" aria-label="Loading Screen">
     <div class="loading-content">
-      <div class="app-logo">🌾</div>
+      <div class="app-logo" aria-hidden="true">🌾</div>
       <h1 class="app-title">FarmVoice AI</h1>
       <p class="app-tagline">Your farm. Your voice. Your AI.</p>
-      <div class="loading-spinner"></div>
+      <div class="loading-spinner" aria-label="Loading..." role="status"></div>
     </div>
-  </div>
+  </main>
 
   <!-- ── AUTH SCREEN ────────────────────────────────────────── -->
-  <div id="screen-auth" class="screen">
+  <main id="screen-auth" class="screen" role="main" aria-label="Authentication">
 
     <!-- Login View -->
-    <div id="view-login" class="view active">
+    <div id="view-login" class="view active" role="region" aria-label="Login View">
       <div class="screen-header">
-        <div class="app-logo-small">🌾</div>
+        <div class="app-logo-small" aria-hidden="true">🌾</div>
         <h2>Welcome Back</h2>
         <p>Say your PIN or type it below</p>
       </div>
       <div class="card">
-        <div class="pin-display" id="pin-display">_ _ _ _</div>
-        <div class="pin-pad">
-          <button class="pin-btn" onclick="Auth.pinPress('1')">1</button>
-          <button class="pin-btn" onclick="Auth.pinPress('2')">2</button>
-          <button class="pin-btn" onclick="Auth.pinPress('3')">3</button>
-          <button class="pin-btn" onclick="Auth.pinPress('4')">4</button>
-          <button class="pin-btn" onclick="Auth.pinPress('5')">5</button>
-          <button class="pin-btn" onclick="Auth.pinPress('6')">6</button>
-          <button class="pin-btn" onclick="Auth.pinPress('7')">7</button>
-          <button class="pin-btn" onclick="Auth.pinPress('8')">8</button>
-          <button class="pin-btn" onclick="Auth.pinPress('9')">9</button>
-          <button class="pin-btn pin-clear" onclick="Auth.pinClear()">⌫</button>
-          <button class="pin-btn" onclick="Auth.pinPress('0')">0</button>
-          <button class="pin-btn pin-submit" onclick="Auth.pinSubmit()">✓</button>
+        <div class="pin-display" id="pin-display" aria-live="polite" aria-atomic="true">_ _ _ _</div>
+        <div class="pin-pad" role="group" aria-label="PIN Pad">
+          <button class="pin-btn" onclick="Auth.pinPress('1')" aria-label="1">1</button>
+          <button class="pin-btn" onclick="Auth.pinPress('2')" aria-label="2">2</button>
+          <button class="pin-btn" onclick="Auth.pinPress('3')" aria-label="3">3</button>
+          <button class="pin-btn" onclick="Auth.pinPress('4')" aria-label="4">4</button>
+          <button class="pin-btn" onclick="Auth.pinPress('5')" aria-label="5">5</button>
+          <button class="pin-btn" onclick="Auth.pinPress('6')" aria-label="6">6</button>
+          <button class="pin-btn" onclick="Auth.pinPress('7')" aria-label="7">7</button>
+          <button class="pin-btn" onclick="Auth.pinPress('8')" aria-label="8">8</button>
+          <button class="pin-btn" onclick="Auth.pinPress('9')" aria-label="9">9</button>
+          <button class="pin-btn pin-clear" onclick="Auth.pinClear()" aria-label="Clear PIN">⌫</button>
+          <button class="pin-btn" onclick="Auth.pinPress('0')" aria-label="0">0</button>
+          <button class="pin-btn pin-submit" onclick="Auth.pinSubmit()" aria-label="Submit PIN">✓</button>
         </div>
-        <button class="btn-voice" onclick="Auth.voiceLogin()">
-          🎤 Login by Voice
+        <button class="btn-voice" onclick="Auth.voiceLogin()" aria-label="Login by Voice">
+          <span aria-hidden="true">🎤</span> Login by Voice
         </button>
       </div>
     </div>
 
     <!-- Register View -->
-    <div id="view-register" class="view">
+    <div id="view-register" class="view" role="region" aria-label="Registration View">
       <div class="screen-header">
-        <div class="app-logo-small">🌾</div>
+        <div class="app-logo-small" aria-hidden="true">🌾</div>
         <h2>Create Account</h2>
         <p>Let's set up your farm</p>
       </div>
       <div class="card">
-        <div class="voice-prompt" id="register-prompt">
+        <div class="voice-prompt" id="register-prompt" aria-live="polite">
           Press the mic to get started
         </div>
-        <button class="btn-voice btn-large" onclick="Auth.startRegistration()">
-          🎤 Start Voice Setup
+        <button class="btn-voice btn-large" onclick="Auth.startRegistration()" aria-label="Start Voice Setup">
+          <span aria-hidden="true">🎤</span> Start Voice Setup
         </button>
-        <div class="progress-dots" id="register-progress">
+        <button class="btn-secondary" onclick="Auth.showKeyboardRegistration()" aria-label="Setup Manually">
+          <span aria-hidden="true">⌨️</span> Setup Manually
+        </button>
+        <div class="progress-dots" id="register-progress" aria-hidden="true">
           <span class="dot active"></span>
           <span class="dot"></span>
           <span class="dot"></span>
@@ -73,150 +76,230 @@
       </div>
     </div>
 
-  </div>
+    <!-- Keyboard Register View -->
+    <div id="view-register-keyboard" class="view" role="region" aria-label="Manual Registration View">
+      <div class="screen-header">
+        <div class="app-logo-small" aria-hidden="true">🌾</div>
+        <h2>Manual Setup</h2>
+        <p>Type your details below</p>
+      </div>
+      <div class="card" style="padding: 24px;">
+        <div style="margin-bottom: 16px;">
+          <label for="reg-name" style="display:block;margin-bottom:6px;font-weight:600;font-size:14px;color:var(--gray)">First Name</label>
+          <input type="text" id="reg-name" aria-label="First Name" style="width:100%;height:48px;border-radius:12px;border:1px solid var(--gray-light);padding:0 16px;font-size:16px;background:var(--gray-light)">
+        </div>
+        <div style="margin-bottom: 16px;">
+          <label for="reg-surname" style="display:block;margin-bottom:6px;font-weight:600;font-size:14px;color:var(--gray)">Surname</label>
+          <input type="text" id="reg-surname" aria-label="Surname" style="width:100%;height:48px;border-radius:12px;border:1px solid var(--gray-light);padding:0 16px;font-size:16px;background:var(--gray-light)">
+        </div>
+        <div style="margin-bottom: 24px;">
+          <label for="reg-pin" style="display:block;margin-bottom:6px;font-weight:600;font-size:14px;color:var(--gray)">4 Digit PIN</label>
+          <input type="password" id="reg-pin" aria-label="4 Digit PIN" maxlength="4" pattern="\d*" style="width:100%;height:48px;border-radius:12px;border:1px solid var(--gray-light);padding:0 16px;font-size:16px;background:var(--gray-light);text-align:center;letter-spacing:8px">
+        </div>
+        <button class="btn-voice btn-large" onclick="Auth.submitKeyboardRegistration()" aria-label="Create Account">
+          <span aria-hidden="true">✓</span> Create Account
+        </button>
+        <button class="btn-secondary" onclick="Auth.showRegister()" aria-label="Use Voice Instead">
+          <span aria-hidden="true">🎤</span> Use Voice Instead
+        </button>
+      </div>
+    </div>
+
+  </main>
 
   <!-- ── HOME SCREEN ────────────────────────────────────────── -->
-  <div id="screen-home" class="screen">
+  <main id="screen-home" class="screen" role="main" aria-label="Home Screen">
     <div class="top-bar">
-      <div>
+      <div aria-live="polite">
         <div class="greeting" id="home-greeting">Good morning</div>
         <div class="username" id="home-username">Farmer</div>
       </div>
-      <button class="icon-btn" onclick="App.goTo('assistant')">🤖</button>
+      <button class="icon-btn" onclick="App.goTo('assistant')" aria-label="Open AI Assistant">
+        <span aria-hidden="true">🤖</span>
+      </button>
     </div>
 
     <!-- Alert banner -->
-    <div class="alert-banner" id="alert-banner" style="display:none">
-      <span>⚠️</span>
+    <div class="alert-banner" id="alert-banner" style="display:none" role="alert" aria-live="assertive">
+      <span aria-hidden="true">⚠️</span>
       <span id="alert-text">Vaccination due</span>
     </div>
 
     <!-- Stats row -->
-    <div class="stats-row">
+    <div class="stats-row" aria-label="Farm Statistics">
       <div class="stat-card">
-        <div class="stat-number" id="stat-animals">0</div>
+        <div class="stat-number" id="stat-animals" aria-live="polite">0</div>
         <div class="stat-label">Animals</div>
       </div>
       <div class="stat-card">
-        <div class="stat-number" id="stat-categories">0</div>
-        <div class="stat-label">Categories</div>
+        <div class="stat-number" id="stat-crops" aria-live="polite">0</div>
+        <div class="stat-label">Crops</div>
       </div>
       <div class="stat-card">
-        <div class="stat-number" id="stat-vaccines">0</div>
+        <div class="stat-number" id="stat-vaccines" aria-live="polite">0</div>
         <div class="stat-label">Due Vaccines</div>
       </div>
     </div>
 
     <!-- Quick actions -->
     <div class="section-title">Quick Actions</div>
-    <div class="action-grid">
+    <div class="action-grid" role="group" aria-label="Quick Actions">
       <button class="action-btn" onclick="App.goTo('livestock')">
-        <span class="action-icon">🐄</span>
+        <span class="action-icon" aria-hidden="true">🐄</span>
         <span>My Livestock</span>
       </button>
-      <button class="action-btn" onclick="App.goTo('assistant')">
-        <span class="action-icon">🤖</span>
-        <span>AI Assistant</span>
+      <button class="action-btn" onclick="App.goTo('crops')">
+        <span class="action-icon" aria-hidden="true">🌱</span>
+        <span>My Crops</span>
       </button>
-      <button class="action-btn" onclick="Home.voiceCommand()">
-        <span class="action-icon">🎤</span>
+      <button class="action-btn" onclick="Home.voiceCommand()" aria-label="Voice Command">
+        <span class="action-icon" aria-hidden="true">🎤</span>
         <span>Voice Command</span>
       </button>
-      <button class="action-btn" onclick="App.goTo('animal-add')">
-        <span class="action-icon">➕</span>
-        <span>Add Animal</span>
+      <button class="action-btn" onclick="App.goTo('tracker')">
+        <span class="action-icon" aria-hidden="true">📋</span>
+        <span>Activity Tracker</span>
       </button>
     </div>
 
     <!-- Recent animals -->
     <div class="section-title">My Animals</div>
-    <div id="recent-animals" class="animal-list">
+    <div id="recent-animals" class="animal-list" aria-live="polite">
       <div class="empty-state">No animals added yet. Tap Add Animal to start.</div>
     </div>
 
-    <nav class="bottom-nav">
-      <button class="nav-btn active" onclick="App.goTo('home')">🏠<span>Home</span></button>
-      <button class="nav-btn" onclick="App.goTo('livestock')">🐄<span>Livestock</span></button>
-      <button class="nav-btn" onclick="App.goTo('assistant')">🤖<span>Assistant</span></button>
+    <nav class="bottom-nav" role="navigation" aria-label="Main Navigation">
+      <button class="nav-btn active" onclick="App.goTo('home')" aria-label="Home"><span aria-hidden="true">🏠</span><span>Home</span></button>
+      <button class="nav-btn" onclick="App.goTo('livestock')" aria-label="Livestock"><span aria-hidden="true">🐄</span><span>Livestock</span></button>
+      <button class="nav-btn" onclick="App.goTo('crops')" aria-label="Crops"><span aria-hidden="true">🌱</span><span>Crops</span></button>
+      <button class="nav-btn" onclick="App.goTo('tracker')" aria-label="Tracker"><span aria-hidden="true">📋</span><span>Tracker</span></button>
     </nav>
-  </div>
+  </main>
 
   <!-- ── LIVESTOCK SCREEN ───────────────────────────────────── -->
-  <div id="screen-livestock" class="screen">
+  <main id="screen-livestock" class="screen" role="main" aria-label="Livestock Management">
     <div class="top-bar">
-      <button class="back-btn" onclick="App.goTo('home')">←</button>
+      <button class="back-btn" onclick="App.goTo('home')" aria-label="Go Back">←</button>
       <h2>My Livestock</h2>
-      <button class="icon-btn" onclick="Livestock.addCategory()">＋</button>
+      <button class="icon-btn" onclick="Livestock.addCategory()" aria-label="Add Category">＋</button>
     </div>
 
-    <div id="category-list" class="category-list">
+    <div id="category-list" class="category-list" aria-live="polite">
       <div class="empty-state">No categories yet. Tap + to add one.</div>
     </div>
 
-    <button class="fab" onclick="Livestock.addCategory()">＋</button>
+    <button class="fab" onclick="Livestock.addCategory()" aria-label="Add Livestock Category">＋</button>
 
-    <nav class="bottom-nav">
-      <button class="nav-btn" onclick="App.goTo('home')">🏠<span>Home</span></button>
-      <button class="nav-btn active" onclick="App.goTo('livestock')">🐄<span>Livestock</span></button>
-      <button class="nav-btn" onclick="App.goTo('assistant')">🤖<span>Assistant</span></button>
+    <nav class="bottom-nav" role="navigation" aria-label="Main Navigation">
+      <button class="nav-btn" onclick="App.goTo('home')" aria-label="Home"><span aria-hidden="true">🏠</span><span>Home</span></button>
+      <button class="nav-btn active" onclick="App.goTo('livestock')" aria-label="Livestock"><span aria-hidden="true">🐄</span><span>Livestock</span></button>
+      <button class="nav-btn" onclick="App.goTo('crops')" aria-label="Crops"><span aria-hidden="true">🌱</span><span>Crops</span></button>
+      <button class="nav-btn" onclick="App.goTo('tracker')" aria-label="Tracker"><span aria-hidden="true">📋</span><span>Tracker</span></button>
     </nav>
-  </div>
+  </main>
+
+  <!-- ── CROPS SCREEN ───────────────────────────────────────── -->
+  <main id="screen-crops" class="screen" role="main" aria-label="Crops Management">
+    <div class="top-bar">
+      <button class="back-btn" onclick="App.goTo('home')" aria-label="Go Back">←</button>
+      <h2>My Crops</h2>
+      <button class="icon-btn" onclick="Crops.startAdd()" aria-label="Add Crop">＋</button>
+    </div>
+
+    <div id="crop-list" class="category-list" aria-live="polite">
+      <div class="empty-state">No crops yet. Tap + to plant one.</div>
+    </div>
+
+    <button class="fab" onclick="Crops.startAdd()" aria-label="Add Crop">＋</button>
+
+    <nav class="bottom-nav" role="navigation" aria-label="Main Navigation">
+      <button class="nav-btn" onclick="App.goTo('home')" aria-label="Home"><span aria-hidden="true">🏠</span><span>Home</span></button>
+      <button class="nav-btn" onclick="App.goTo('livestock')" aria-label="Livestock"><span aria-hidden="true">🐄</span><span>Livestock</span></button>
+      <button class="nav-btn active" onclick="App.goTo('crops')" aria-label="Crops"><span aria-hidden="true">🌱</span><span>Crops</span></button>
+      <button class="nav-btn" onclick="App.goTo('tracker')" aria-label="Tracker"><span aria-hidden="true">📋</span><span>Tracker</span></button>
+    </nav>
+  </main>
+
+  <!-- ── TRACKER SCREEN ─────────────────────────────────────── -->
+  <main id="screen-tracker" class="screen" role="main" aria-label="Activity Tracker">
+    <div class="top-bar">
+      <button class="back-btn" onclick="App.goTo('home')" aria-label="Go Back">←</button>
+      <h2>Activity Tracker</h2>
+      <button class="icon-btn" onclick="App.goTo('assistant')" aria-label="Assistant"><span aria-hidden="true">🤖</span></button>
+    </div>
+
+    <div id="tracker-list" class="category-list" aria-live="polite">
+      <div class="empty-state">No recent activity.</div>
+    </div>
+
+    <button class="fab" onclick="Tracker.startAddLog()" aria-label="Add Log Entry">
+      <span aria-hidden="true">✍️</span>
+    </button>
+
+    <nav class="bottom-nav" role="navigation" aria-label="Main Navigation">
+      <button class="nav-btn" onclick="App.goTo('home')" aria-label="Home"><span aria-hidden="true">🏠</span><span>Home</span></button>
+      <button class="nav-btn" onclick="App.goTo('livestock')" aria-label="Livestock"><span aria-hidden="true">🐄</span><span>Livestock</span></button>
+      <button class="nav-btn" onclick="App.goTo('crops')" aria-label="Crops"><span aria-hidden="true">🌱</span><span>Crops</span></button>
+      <button class="nav-btn active" onclick="App.goTo('tracker')" aria-label="Tracker"><span aria-hidden="true">📋</span><span>Tracker</span></button>
+    </nav>
+  </main>
 
   <!-- ── ANIMAL LIST SCREEN ─────────────────────────────────── -->
-  <div id="screen-animal-list" class="screen">
+  <main id="screen-animal-list" class="screen" role="main" aria-label="Animal List">
     <div class="top-bar">
-      <button class="back-btn" onclick="App.goTo('livestock')">←</button>
+      <button class="back-btn" onclick="App.goTo('livestock')" aria-label="Go Back">←</button>
       <h2 id="animal-list-title">Animals</h2>
-      <button class="icon-btn" onclick="Animal.startAdd()">＋</button>
+      <button class="icon-btn" onclick="Animal.startAdd()" aria-label="Add Animal">＋</button>
     </div>
-    <div id="animal-list" class="animal-list"></div>
-    <button class="fab" onclick="Animal.startAdd()">＋</button>
-    <nav class="bottom-nav">
-      <button class="nav-btn" onclick="App.goTo('home')">🏠<span>Home</span></button>
-      <button class="nav-btn active" onclick="App.goTo('livestock')">🐄<span>Livestock</span></button>
-      <button class="nav-btn" onclick="App.goTo('assistant')">🤖<span>Assistant</span></button>
+    <div id="animal-list" class="animal-list" aria-live="polite"></div>
+    <button class="fab" onclick="Animal.startAdd()" aria-label="Add Animal">＋</button>
+    <nav class="bottom-nav" role="navigation" aria-label="Main Navigation">
+      <button class="nav-btn" onclick="App.goTo('home')" aria-label="Home"><span aria-hidden="true">🏠</span><span>Home</span></button>
+      <button class="nav-btn active" onclick="App.goTo('livestock')" aria-label="Livestock"><span aria-hidden="true">🐄</span><span>Livestock</span></button>
+      <button class="nav-btn" onclick="App.goTo('crops')" aria-label="Crops"><span aria-hidden="true">🌱</span><span>Crops</span></button>
+      <button class="nav-btn" onclick="App.goTo('tracker')" aria-label="Tracker"><span aria-hidden="true">📋</span><span>Tracker</span></button>
     </nav>
-  </div>
+  </main>
 
   <!-- ── ADD ANIMAL SCREEN ──────────────────────────────────── -->
-  <div id="screen-animal-add" class="screen">
+  <main id="screen-animal-add" class="screen" role="main" aria-label="Add Animal">
     <div class="top-bar">
-      <button class="back-btn" onclick="App.goBack()">←</button>
+      <button class="back-btn" onclick="App.goBack()" aria-label="Go Back">←</button>
       <h2>Add Animal</h2>
       <div></div>
     </div>
     <div class="card">
-      <div class="voice-prompt" id="add-animal-prompt">
+      <div class="voice-prompt" id="add-animal-prompt" aria-live="polite">
         Press the mic to add an animal by voice
       </div>
-      <button class="btn-voice btn-large" onclick="Animal.startAdd()">
-        🎤 Add by Voice
+      <button class="btn-voice btn-large" onclick="Animal.startAdd()" aria-label="Add by Voice">
+        <span aria-hidden="true">🎤</span> Add by Voice
       </button>
 
       <!-- Photo upload -->
       <div class="photo-section">
         <div class="photo-preview" id="photo-preview">
-          <span>📷</span>
+          <span aria-hidden="true">📷</span>
           <span>Take or upload photo</span>
         </div>
-        <input type="file" id="photo-input" accept="image/*" capture="environment"
+        <input type="file" id="photo-input" aria-label="Upload Photo" accept="image/*" capture="environment"
                onchange="Vision.handlePhoto(this)" style="display:none">
         <button class="btn-secondary" onclick="document.getElementById('photo-input').click()">
-          📷 Add Photo
+          <span aria-hidden="true">📷</span> Add Photo
         </button>
-        <div id="breed-result" class="breed-result" style="display:none"></div>
+        <div id="breed-result" class="breed-result" style="display:none" aria-live="polite"></div>
       </div>
     </div>
-  </div>
+  </main>
 
   <!-- ── ANIMAL PROFILE SCREEN ─────────────────────────────── -->
-  <div id="screen-animal-profile" class="screen">
+  <main id="screen-animal-profile" class="screen" role="main" aria-label="Animal Profile">
     <div class="top-bar">
-      <button class="back-btn" onclick="App.goBack()">←</button>
+      <button class="back-btn" onclick="App.goBack()" aria-label="Go Back">←</button>
       <h2 id="profile-name">Animal Profile</h2>
       <div></div>
     </div>
-    <div class="profile-photo" id="profile-photo">🐄</div>
+    <div class="profile-photo" id="profile-photo" aria-hidden="true">🐄</div>
     <div class="card profile-card">
       <div class="profile-row">
         <span class="profile-label">Name</span>
@@ -245,45 +328,46 @@
     </div>
     <div class="card vaccine-card">
       <div class="section-title">Vaccination Schedule</div>
-      <div id="profile-vaccines"></div>
+      <div id="profile-vaccines" aria-live="polite"></div>
     </div>
-    <button class="btn-voice" onclick="Animal.readProfile()">
-      🔊 Read Profile Aloud
+    <button class="btn-voice" onclick="Animal.readProfile()" aria-label="Read Profile Aloud">
+      <span aria-hidden="true">🔊</span> Read Profile Aloud
     </button>
-  </div>
+  </main>
 
   <!-- ── ASSISTANT SCREEN ───────────────────────────────────── -->
-  <div id="screen-assistant" class="screen">
+  <main id="screen-assistant" class="screen" role="main" aria-label="AI Assistant">
     <div class="top-bar">
-      <button class="back-btn" onclick="App.goTo('home')">←</button>
+      <button class="back-btn" onclick="App.goBack()" aria-label="Go Back">←</button>
       <h2>AI Assistant</h2>
       <div></div>
     </div>
 
-    <div class="chat-container" id="chat-container">
+    <div class="chat-container" id="chat-container" aria-live="polite" aria-atomic="false">
       <div class="chat-bubble assistant-bubble">
         Hello! I am your FarmVoice AI assistant. Ask me anything about farming,
         animal health, or livestock management.
       </div>
     </div>
 
-    <div class="chat-input-area">
-      <button class="mic-btn" id="mic-btn" onclick="Assistant.voiceInput()">🎤</button>
-      <input type="text" id="chat-input" placeholder="Ask a farming question..."
+    <div class="chat-input-area" role="search" aria-label="Chat Input Area">
+      <button class="mic-btn" id="mic-btn" onclick="Assistant.voiceInput()" aria-label="Use Microphone Voice Input">
+        <span aria-hidden="true">🎤</span>
+      </button>
+      <input type="text" id="chat-input" placeholder="Ask a farming question..." aria-label="Chat message"
              onkeypress="if(event.key==='Enter') Assistant.sendMessage()">
-      <button class="send-btn" onclick="Assistant.sendMessage()">➤</button>
+      <button class="send-btn" onclick="Assistant.sendMessage()" aria-label="Send Message">
+        <span aria-hidden="true">➤</span>
+      </button>
     </div>
 
-  </div>
+  </main>
 
   <!-- ── SCRIPTS ────────────────────────────────────────────── -->
 
   <script>
-  // This key is set here for GitHub Pages
-  // Never put keys in js files that are pushed to GitHub
   window.GEMINI_KEY = 'AIzaSyBSQZFqGRn4N926nB7yf_HlId6JFyKTQqs';
 
-  // Register Service Worker for offline support
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js')
       .then(reg => console.log('Service Worker registered'))
@@ -298,6 +382,8 @@
   <script src="js/vaccine.js"></script>
   <script src="js/vision.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/crops.js"></script>
+  <script src="js/tracker.js"></script>
   <script src="js/home.js"></script>
   <script src="js/livestock.js"></script>
   <script src="js/animal.js"></script>
