@@ -1,6 +1,6 @@
 var ClaudeAPI = {
 
-  MODEL: 'gemini-2.5-flash',
+  MODEL: 'gemini-2.0-flash',
 
   getURL() {
     // Read key at call time so it's always fresh
@@ -9,6 +9,10 @@ var ClaudeAPI = {
   },
 
   async askClaude(question) {
+    const key = window.GEMINI_KEY || '';
+    if (!key) {
+      return 'The AI assistant is not configured. Please add a Google Gemini API key to get started.';
+    }
     try {
       const response = await fetch(this.getURL(), {
         method: 'POST',
@@ -16,14 +20,12 @@ var ClaudeAPI = {
         body: JSON.stringify({
           system_instruction: {
             parts: [{
-              text: `You are FarmVoice AI, a helpful farming assistant for blind and
-                     visually impaired farmers in South Africa.
-                     Keep answers short, clear and spoken-friendly.
-                     Maximum 2 sentences. No bullet points. No markdown.
-                     Speak directly to the farmer.`
+              text: `You are FarmVoice AI, a helpful farming assistant for blind and visually impaired farmers in South Africa. Keep answers short, clear and spoken-friendly. Maximum 2 sentences. No bullet points. No markdown. Speak directly to the farmer.`
             }]
           },
-          contents: [{ parts: [{ text: question }] }]
+          contents: [{
+            parts: [{ text: question }]
+          }]
         })
       });
 
@@ -39,6 +41,10 @@ var ClaudeAPI = {
   },
 
   async analyzeImage(base64Image) {
+    const key = window.GEMINI_KEY || '';
+    if (!key) {
+      return 'Image analysis is not configured. Please add a Google Gemini API key.';
+    }
     try {
       const response = await fetch(this.getURL(), {
         method: 'POST',

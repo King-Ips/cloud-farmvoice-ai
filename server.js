@@ -1,11 +1,6 @@
-const https = require('https');
+const http = require('http');
 const fs = require('fs');
 const path = require('path');
-
-const options = {
-  key: fs.readFileSync('127.0.0.1+1-key.pem'),
-  cert: fs.readFileSync('127.0.0.1+1.pem')
-};
 
 const mimeTypes = {
   '.html': 'text/html',
@@ -17,7 +12,18 @@ const mimeTypes = {
   '.ico': 'image/x-icon'
 };
 
-https.createServer(options, (req, res) => {
+http.createServer((req, res) => {
+  // Enable CORS for API calls
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    res.writeHead(200);
+    res.end();
+    return;
+  }
+
   let filePath = '.' + req.url;
   if (filePath === './') filePath = './index.html';
 
@@ -33,6 +39,6 @@ https.createServer(options, (req, res) => {
     res.writeHead(200, { 'Content-Type': contentType });
     res.end(content);
   });
-}).listen(8443, () => {
-  console.log('Server running at https://127.0.0.1:8443');
+}).listen(8080, () => {
+  console.log('Server running at http://localhost:8080');
 });

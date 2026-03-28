@@ -11,7 +11,7 @@ var Auth = {
     await VoiceEngine.speak('Would you like to hear these instructions again? Say yes or no. If you do not respond, we will continue.');
     
     try {
-      const response = await VoiceEngine.listen();
+      const response = await VoiceEngine.listen(5000);
       if (response && response.includes('yes')) {
         await this.playGlobalIntroduction();
       } else {
@@ -44,10 +44,15 @@ var Auth = {
 
   async listenForPin() {
     const user = FarmStorage.getUser();
+    if (!user || !user.pinHash) {
+      await VoiceEngine.speak('Account data is corrupted. Please try again.');
+      await this.startRegistration();
+      return;
+    }
     try {
       const response = await VoiceEngine.listen();
       const pin = response.replace(/\D/g, '').slice(0, 4);
-      if (pin === user.pin) {
+      if (FarmStorage.verifyPin(pin, user.pinHash)) {
         await VoiceEngine.speak('PIN accepted.');
         await this.speakGlobalInstructions(user.name);
       } else {
@@ -89,7 +94,11 @@ var Auth = {
 
   pinSubmit() {
     const user = FarmStorage.getUser();
-    if (this.currentPin === user.pin) {
+    if (!user || !user.pinHash) {
+      VoiceEngine.speak('Account error. Please restart.');
+      return;
+    }
+    if (FarmStorage.verifyPin(this.currentPin, user.pinHash)) {
       VoiceEngine.speak('PIN accepted.').then(() => {
         this.speakGlobalInstructions(user.name);
       });

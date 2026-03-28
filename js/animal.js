@@ -56,7 +56,14 @@ var Animal = {
       // Improved date parsing - handle format like "5 March 2024"
       let dobString = dobRaw;
       try {
-        const d = new Date(dobRaw);
+        // Try multiple date parsing methods for voice input
+        let d = new Date(dobRaw);
+        // If that fails, try stripping extra spaces and special chars
+        if (isNaN(d.getTime())) {
+          const cleaned = dobRaw.replace(/\s+/g, ' ').trim();
+          d = new Date(cleaned);
+        }
+        // If still invalid, keep as-is
         if (!isNaN(d.getTime())) {
           dobString = d.toISOString().split('T')[0];
         }
