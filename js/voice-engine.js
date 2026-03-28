@@ -46,11 +46,15 @@ var VoiceEngine = {
     return false;
   },
 
-  listen() {
+  listen(timeoutMs = 15000) {
     this.stopListening();
     return new Promise((resolve, reject) => {
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SR) { alert('Please use Chrome.'); reject('not supported'); return; }
+      if (!SR) {
+        console.error('Speech Recognition API not supported');
+        reject('Speech Recognition not supported in this browser');
+        return;
+      }
 
       const r = new SR();
       this._recognition = r;
@@ -60,9 +64,20 @@ var VoiceEngine = {
       r.continuous = false;
 
       let done = false;
-      const finish = (fn) => { if (done) return; done = true; this._recognition = null; fn(); };
+      let timeoutHandle = null;
+      const finish = (fn) => {
+        if (done) return;
+        done = true;
+        if (timeoutHandle) clearTimeout(timeoutHandle);
+        this._recognition = null;
+        fn();
+      };
 
       r.onresult = (e) => {
+        if (!e.results || !e.results[0]) {
+          finish(() => reject('No speech detected'));
+          return;
+        }
         const t = e.results[0][0].transcript.trim().toLowerCase();
         console.log('User said:', t);
         if (this.checkGlobal(t)) { finish(() => {}); return; }
@@ -70,6 +85,7 @@ var VoiceEngine = {
       };
 
       r.onerror = (e) => {
+        console.error('Speech Recognition Error:', e.error);
         if (e.error === 'no-speech') { try { r.start(); } catch(x) {} return; }
         if (e.error === 'aborted') return;
         finish(() => reject(e.error));
@@ -77,7 +93,13 @@ var VoiceEngine = {
 
       r.onend = () => { if (!done) { try { r.start(); } catch(x) {} } };
 
-      setTimeout(() => { try { r.start(); } catch(x) {} }, 150);
+      timeoutHandle = setTimeout(() => {
+        if (!done) {
+          finish(() => reject('Listening timeout'));
+        }
+      }, timeoutMs);
+
+      setTimeout(() => { try { r.start(); } catch(x) { finish(() => reject('Failed to start listening')); } }, 150);
     });
   },
 
@@ -87,3 +109,10 @@ var VoiceEngine = {
     return await this.listen();
   }
 };
+
+
+
+
+
+
+
