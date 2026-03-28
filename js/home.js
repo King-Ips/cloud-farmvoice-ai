@@ -51,7 +51,13 @@ var Home = {
     this.listenForMainChoice();
   },
 
-  async listenForMainChoice() {
+  async listenForMainChoice(retries = 0) {
+    if (retries > 3) {
+      await VoiceEngine.speak('No valid command received. Reloading home screen.');
+      this.load();
+      return;
+    }
+    
     try {
       const choice = await VoiceEngine.listen(20000);
       const t = choice.toLowerCase().trim();
@@ -65,14 +71,14 @@ var Home = {
         Assistant.load();
       } else {
         await VoiceEngine.speak('Say livestock to manage your farm, or say AI assistant for farming questions.');
-        this.listenForMainChoice();
+        await this.listenForMainChoice(retries + 1);
       }
     } catch (e) {
       if (e === 'aborted') return;
       await new Promise(r => setTimeout(r, 800));
-      this.listenForMainChoice();
+      await this.listenForMainChoice(retries + 1);
     }
-  },
+  }
 
   loadRecentAnimals(categories) {
     const container = document.getElementById('recent-animals');

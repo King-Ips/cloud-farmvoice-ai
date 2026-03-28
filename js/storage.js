@@ -25,16 +25,22 @@ var FarmStorage = {
   },
 
   getUser() {
-    const user = localStorage.getItem('fv_user');
-    if (!user) return null;
-    const parsed = JSON.parse(user);
-    // Migrate old format (pin) to new format (pinHash)
-    if (parsed.pin && !parsed.pinHash) {
-      parsed.pinHash = this.hashPin(parsed.pin);
-      delete parsed.pin; // Remove old plain-text pin
-      this.saveUser(parsed.name, parsed.surname, parsed.pinHash);
+    try {
+      const user = localStorage.getItem('fv_user');
+      if (!user) return null;
+      const parsed = JSON.parse(user);
+      // Migrate old format (pin) to new format (pinHash)
+      if (parsed.pin && !parsed.pinHash) {
+        parsed.pinHash = this.hashPin(parsed.pin);
+        delete parsed.pin; // Remove old plain-text pin
+        this.saveUser(parsed.name, parsed.surname, parsed.pinHash);
+      }
+      return parsed;
+    } catch (e) {
+      console.error('Error parsing user data:', e);
+      this.clearAll();
+      return null;
     }
-    return parsed;
   },
 
   // ── LIVESTOCK CATEGORIES ──────────────────────────────────────
@@ -43,8 +49,13 @@ var FarmStorage = {
   },
 
   getCategories() {
-    const cats = localStorage.getItem('fv_categories');
-    return cats ? JSON.parse(cats) : [];
+    try {
+      const cats = localStorage.getItem('fv_categories');
+      return cats ? JSON.parse(cats) : [];
+    } catch (e) {
+      console.error('Error parsing categories:', e);
+      return [];
+    }
   },
 
   addCategory(name) {
@@ -70,9 +81,14 @@ var FarmStorage = {
   },
 
   getAnimals(category) {
-    const key = 'fv_animals_' + category;
-    const animals = localStorage.getItem(key);
-    return animals ? JSON.parse(animals) : [];
+    try {
+      const key = 'fv_animals_' + category;
+      const animals = localStorage.getItem(key);
+      return animals ? JSON.parse(animals) : [];
+    } catch (e) {
+      console.error('Error parsing animals for ' + category + ':', e);
+      return [];
+    }
   },
 
   addAnimal(category, animal) {

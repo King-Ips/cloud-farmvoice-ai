@@ -18,22 +18,32 @@ var Assistant = {
     await this.getResponse(message);
   },
 
-  async voiceInput() {
+  async voiceInput(retries = 0) {
     const micBtn = document.getElementById('mic-btn');
+    if (retries > 3) {
+      await VoiceEngine.speak('Could not understand. Returning to main menu.');
+      App.goTo('home');
+      Home.load();
+      return;
+    }
+    
     micBtn.classList.add('listening');
     try {
       const message = await VoiceEngine.listen();
       micBtn.classList.remove('listening');
-      if (!message) return;
+      if (!message) {
+        await this.voiceInput(retries + 1);
+        return;
+      }
       this.addBubble(message, 'user');
       await this.getResponse(message);
     } catch (e) {
       micBtn.classList.remove('listening');
-      console.error(e);
+      console.error('Voice input error:', e);
       await new Promise(r => setTimeout(r, 1000));
-      this.voiceInput();
+      await this.voiceInput(retries + 1);
     }
-  },
+  }
 
   async getResponse(message) {
     const thinking = this.addBubble('Thinking...', 'assistant');
