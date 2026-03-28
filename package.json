@@ -1,0 +1,28 @@
+{
+  "name": "farmvoice-ai",
+  "version": "1.0.0",
+  "description": "A voice-first AI farming assistant for blind and visually impaired farmers in South Africa",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "NODE_ENV=development node server.js",
+    "test": "echo 'Open browser console and run tests from /tests/ folder'"
+  },
+  "keywords": [
+    "farming",
+    "agriculture",
+    "voice",
+    "accessibility",
+    "ai",
+    "livestock"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.0.0"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

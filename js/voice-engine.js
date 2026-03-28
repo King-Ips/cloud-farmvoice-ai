@@ -2,21 +2,52 @@ var VoiceEngine = {
 
   _recognition: null,
   _lastMessage: '',
+  _isSupported: false,
+
+  init() {
+    // Check browser support
+    this._isSupported = (
+      'speechSynthesis' in window && 
+      ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)
+    );
+    if (!this._isSupported) {
+      console.warn('Speech API not fully supported in this browser');
+    }
+    return this._isSupported;
+  },
 
   speak(text) {
     this._lastMessage = text;
     return new Promise((resolve) => {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'en-US';
-      utterance.rate = 0.88;
-      utterance.pitch = 1.0;
-      utterance.volume = 1.0;
-      utterance.onend = () => resolve();
-      utterance.onerror = () => resolve();
-      window.speechSynthesis.speak(utterance);
+      if (!('speechSynthesis' in window)) {
+        console.error('Speech Synthesis not supported');
+        resolve();
+        return;
+      }
+
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-US';
+        utterance.rate = 0.88;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+        
+        utterance.onend = () => resolve();
+        utterance.onerror = (e) => {
+          console.error('Speech error:', e.error);
+          resolve();
+        };
+        
+        window.speechSynthesis.speak(utterance);
+      } catch (e) {
+        console.error('Speech synthesis error:', e);
+        resolve();
+      }
     });
   },
+
+  
 
   stopListening() {
     if (this._recognition) {
@@ -49,64 +80,133 @@ var VoiceEngine = {
   listen(timeoutMs = 15000) {
     this.stopListening();
     return new Promise((resolve, reject) => {
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition || window.mozSpeechRecognition || window.msSpeechRecognition;
+      
       if (!SR) {
-        console.error('Speech Recognition API not supported');
-        reject('Speech Recognition not supported in this browser');
+        console.error('Speech Recognition API not supported in this browser');
+        reject('Speech Recognition not supported');
         return;
       }
 
-      const r = new SR();
-      this._recognition = r;
-      r.lang = 'en-US';
-      r.interimResults = false;
-      r.maxAlternatives = 1;
-      r.continuous = false;
+      try {
+        const r = new SR();
+        this._recognition = r;
+        r.lang = 'en-US';
+        r.interimResults = true;  // Capture interim for flow detection
+        r.maxAlternatives = 1;
+        r.continuous = false;
 
-      let done = false;
-      let timeoutHandle = null;
-      const finish = (fn) => {
-        if (done) return;
-        done = true;
-        if (timeoutHandle) clearTimeout(timeoutHandle);
-        this._recognition = null;
-        fn();
-      };
+        let done = false;
+        let timeoutHandle = null;
+        let silenceTimeout = null;
+        let lastFinalResult = '';
 
-      r.onresult = (e) => {
-        if (!e.results || !e.results[0]) {
-          finish(() => reject('No speech detected'));
-          return;
-        }
-        const t = e.results[0][0].transcript.trim().toLowerCase();
-        console.log('User said:', t);
-        if (this.checkGlobal(t)) { finish(() => {}); return; }
-        finish(() => resolve(t));
-      };
+        const finish = (fn) => {
+          if (done) return;
+          done = true;
+          if (timeoutHandle) clearTimeout(timeoutHandle);
+          if (silenceTimeout) clearTimeout(silenceTimeout);
+          try { r.abort(); } catch(e) {}
+          this._recognition = null;
+          fn();
+        };
 
-      r.onerror = (e) => {
-        console.error('Speech Recognition Error:', e.error);
-        if (e.error === 'no-speech') { try { r.start(); } catch(x) {} return; }
-        if (e.error === 'aborted') return;
-        finish(() => reject(e.error));
-      };
+        r.onstart = () => {
+          console.log('Listening...');
+        };
 
-      r.onend = () => { if (!done) { try { r.start(); } catch(x) {} } };
+        r.onresult = (e) => {
+          if (!e.results || !e.results.length) return;
 
-      timeoutHandle = setTimeout(() => {
-        if (!done) {
-          finish(() => reject('Listening timeout'));
-        }
-      }, timeoutMs);
+          // Get the latest result
+          const latestResult = e.results[e.results.length - 1];
+          const transcript = latestResult[0].transcript.trim().toLowerCase();
 
-      setTimeout(() => { try { r.start(); } catch(x) { finish(() => reject('Failed to start listening')); } }, 150);
+          // Only process FINAL results, not interim ones
+          if (latestResult.isFinal) {
+            if (!transcript) return;
+            
+            lastFinalResult = transcript;
+            console.log('Got final result:', transcript);
+
+            // Check for global commands first
+            if (this.checkGlobal(transcript)) {
+              finish(() => {});
+              return;
+            }
+
+            // Clear silence timeout since we got input
+            if (silenceTimeout) clearTimeout(silenceTimeout);
+
+            // Set timeout to capture this result (user might still be speaking)
+            silenceTimeout = setTimeout(() => {
+              if (!done && lastFinalResult === transcript) {
+                finish(() => resolve(transcript));
+              }
+            }, 1000); // 1 second of no new input = end of speech
+          }
+        };
+
+        r.onerror = (e) => {
+          console.error('Recognition error:', e.error);
+          
+          if (e.error === 'no-speech') {
+            // User hasn't spoken yet - wait longer
+            return;
+          }
+
+          if (e.error === 'aborted') {
+            return;
+          }
+
+          if (e.error === 'network') {
+            finish(() => reject('Network error - check internet'));
+            return;
+          }
+
+          finish(() => reject(e.error || 'Recognition failed'));
+        };
+
+        r.onend = () => {
+          // Don't auto-restart - let silence detection handle it
+          if (!done && lastFinalResult) {
+            // Resolve with last result if available
+            finish(() => resolve(lastFinalResult));
+          } else if (!done) {
+            // No result yet - timeout
+            finish(() => reject('No speech detected'));
+          }
+        };
+
+        timeoutHandle = setTimeout(() => {
+          if (!done) {
+            if (lastFinalResult) {
+              finish(() => resolve(lastFinalResult));
+            } else {
+              finish(() => reject('Listening timeout'));
+            }
+          }
+        }, timeoutMs);
+
+        // Start listening
+        setTimeout(() => {
+          try {
+            r.start();
+          } catch(x) {
+            finish(() => reject('Failed to start listening'));
+          }
+        }, 150);
+      } catch (e) {
+        console.error('Speech Recognition setup error:', e);
+        reject('Failed to initialize speech recognition');
+      }
     });
   },
 
-  async ask(prompt) {
+  async ask(prompt, timeoutMs = 20000) {
     await this.speak(prompt);
     await new Promise(r => setTimeout(r, 350));
-    return await this.listen();
+    return await this.listen(timeoutMs);
   }
 };
 

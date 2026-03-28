@@ -1,79 +1,77 @@
 var ClaudeAPI = {
 
-  MODEL: 'gemini-2.0-flash',
-
-  getURL() {
-    // Read key at call time so it's always fresh
-    const key = window.GEMINI_KEY || '';
-    return `https://generativelanguage.googleapis.com/v1beta/models/${this.MODEL}:generateContent?key=${key}`;
-  },
-
   async askClaude(question) {
-    const key = window.GEMINI_KEY || '';
-    if (!key) {
-      return 'The AI assistant is not configured. Please add a Google Gemini API key to get started.';
+    // Input validation
+    if (!question || typeof question !== 'string' || question.trim().length === 0) {
+      return 'Please ask a question.';
     }
+    
+    const sanitized = this._sanitizeInput(question);
+    
     try {
-      const response = await fetch(this.getURL(), {
+      const response = await fetch('/api/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: {
-            parts: [{
-              text: `You are FarmVoice AI, a helpful farming assistant for blind and visually impaired farmers in South Africa. Keep answers short, clear and spoken-friendly. Maximum 2 sentences. No bullet points. No markdown. Speak directly to the farmer.`
-            }]
-          },
-          contents: [{
-            parts: [{ text: question }]
-          }]
-        })
+        body: JSON.stringify({ question: sanitized })
       });
 
+      if (!response.ok) {
+        console.error('API Error:', response.status);
+        return 'Sorry, I am having trouble connecting. Please try again.';
+      }
+
       const data = await response.json();
-      if (data.error) return 'Sorry, I could not get an answer right now.';
-      const text = data.candidates[0].content.parts[0].text;
-      return text.replace(/[*#_`]/g, '').trim();
+      if (data.error) {
+        console.error('API returned error:', data.error);
+        return 'Sorry, I could not get an answer right now.';
+      }
+      
+      return data.response || 'No response received.';
 
     } catch (error) {
-      console.error('Gemini API error:', error);
+      console.error('API request error:', error);
       return 'Sorry, I am having trouble connecting. Please try again.';
     }
   },
 
   async analyzeImage(base64Image) {
-    const key = window.GEMINI_KEY || '';
-    if (!key) {
-      return 'Image analysis is not configured. Please add a Google Gemini API key.';
+    // Input validation
+    if (!base64Image || typeof base64Image !== 'string' || base64Image.trim().length === 0) {
+      return 'Could not analyze the image. Invalid image data.';
     }
+
     try {
-      const response = await fetch(this.getURL(), {
+      const response = await fetch('/api/analyze-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              {
-                inline_data: {
-                  mime_type: 'image/jpeg',
-                  data: base64Image
-                }
-              },
-              {
-                text: `Look at this livestock animal. Tell me the breed and colour in one short sentence.
-                       Example: "This appears to be a brown Bonsmara cow."
-                       If you cannot identify the breed say: "This appears to be a mixed breed animal."`
-              }
-            ]
-          }]
-        })
+        body: JSON.stringify({ image: base64Image })
       });
 
+      if (!response.ok) {
+        console.error('API Error:', response.status);
+        return 'Could not analyze the image. Please try again.';
+      }
+
       const data = await response.json();
-      if (data.error) return 'Could not identify the animal.';
-      return data.candidates[0].content.parts[0].text;
+      if (data.error) {
+        console.error('API returned error:', data.error);
+        return 'Could not identify the animal.';
+      }
+      
+      return data.response || 'Could not identify the animal.';
 
     } catch (error) {
+      console.error('Image analysis error:', error);
       return 'Could not analyze the image. Please try again.';
     }
+  },
+
+  _sanitizeInput(input) {
+    if (typeof input !== 'string') return '';
+    // Remove HTML tags and limit length
+    return input
+      .replace(/<[^>]*>/g, '')
+      .slice(0, 500)
+      .trim();
   }
 };

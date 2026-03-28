@@ -281,6 +281,13 @@
   // This key is set here for GitHub Pages
   // Never put keys in js files that are pushed to GitHub
   window.GEMINI_KEY = 'AIzaSyBSQZFqGRn4N926nB7yf_HlId6JFyKTQqs';
+
+  // Register Service Worker for offline support
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('Service Worker registered'))
+      .catch(err => console.error('Service Worker registration failed:', err));
+  }
   </script>
 
   <script src="js/storage.js"></script>
