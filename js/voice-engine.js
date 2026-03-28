@@ -1,28 +1,15 @@
 var VoiceEngine = {
 
   _recognition: null,
-  _idleTimer: null,
-  _idleCallback: null,
-
-  _resetIdle() {
-    if (this._idleTimer) clearTimeout(this._idleTimer);
-    this._idleTimer = setTimeout(() => {
-      console.log('Idle — returning to menu');
-      this.stopListening();
-      window.speechSynthesis.cancel();
-      App.goTo('home');
-      Home.load();
-    }, 30000);
-  },
+  _lastMessage: '',
 
   speak(text) {
-    // Reset idle on every speak so registration never times out
-    this._resetIdle();
+    this._lastMessage = text;
     return new Promise((resolve) => {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'en-US';
-      utterance.rate = 1.0;
+      utterance.rate = 0.88;
       utterance.pitch = 1.0;
       utterance.volume = 1.0;
       utterance.onend = () => resolve();
@@ -38,91 +25,65 @@ var VoiceEngine = {
     }
   },
 
+  checkGlobal(t) {
+    if (t.includes('repeat')) {
+      if (this._lastMessage) this.speak(this._lastMessage);
+      return true;
+    }
+    if (t.includes('log out') || t.includes('logout') || t.includes('sign out')) {
+      App.logout();
+      return true;
+    }
+    if (t.includes('go back') || t.includes('back')) {
+      App.goBack();
+      return true;
+    }
+    if (t.includes('menu')) {
+      App.goTo('home');
+      Home.load();
+      return true;
+    }
+    return false;
+  },
+
   listen() {
     this.stopListening();
-    this._resetIdle();
-
     return new Promise((resolve, reject) => {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) {
-        alert('Please use Chrome browser.');
-        reject('not supported');
-        return;
-      }
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) { alert('Please use Chrome.'); reject('not supported'); return; }
 
-      const recognition = new SpeechRecognition();
-      this._recognition = recognition;
-      recognition.lang = 'en-US';
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
-      recognition.continuous = false;
+      const r = new SR();
+      this._recognition = r;
+      r.lang = 'en-US';
+      r.interimResults = false;
+      r.maxAlternatives = 1;
+      r.continuous = false;
 
-      let resolved = false;
+      let done = false;
+      const finish = (fn) => { if (done) return; done = true; this._recognition = null; fn(); };
 
-      const finish = (fn) => {
-        if (resolved) return;
-        resolved = true;
-        this._recognition = null;
-        fn();
-      };
-
-      recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript.trim();
-        console.log('User said:', transcript);
-        const t = transcript.toLowerCase();
-
-        if (t.includes('menu')) {
-          finish(() => {
-            window.speechSynthesis.cancel();
-            App.goTo('home');
-            Home.load();
-          });
-          return;
-        }
-
-        if (t.includes('logout') || t.includes('log out') || t.includes('sign out')) {
-          finish(() => {
-            window.speechSynthesis.cancel();
-            App.logout();
-          });
-          return;
-        }
-
+      r.onresult = (e) => {
+        const t = e.results[0][0].transcript.trim().toLowerCase();
+        console.log('User said:', t);
+        if (this.checkGlobal(t)) { finish(() => {}); return; }
         finish(() => resolve(t));
       };
 
-      recognition.onerror = (event) => {
-        console.error('Voice error:', event.error);
-        if (event.error === 'no-speech') {
-          if (!resolved) {
-            this._resetIdle();
-            try { recognition.start(); } catch(e) {}
-          }
-          return;
-        }
-        if (event.error === 'aborted') return;
-        if (event.error === 'not-allowed') {
-          finish(() => reject(event.error));
-          return;
-        }
-        if (!resolved) finish(() => reject(event.error));
+      r.onerror = (e) => {
+        if (e.error === 'no-speech') { try { r.start(); } catch(x) {} return; }
+        if (e.error === 'aborted') return;
+        finish(() => reject(e.error));
       };
 
-      recognition.onend = () => {
-        if (!resolved) {
-          try { recognition.start(); } catch(e) {}
-        }
-      };
+      r.onend = () => { if (!done) { try { r.start(); } catch(x) {} } };
 
-      setTimeout(() => {
-        try { recognition.start(); } catch(e) {}
-      }, 150);
+      setTimeout(() => { try { r.start(); } catch(x) {} }, 150);
     });
   },
 
   async ask(prompt) {
     await this.speak(prompt);
-    await new Promise(r => setTimeout(r, 200));
+    await new Promise(r => setTimeout(r, 350));
     return await this.listen();
   }
 };

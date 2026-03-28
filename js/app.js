@@ -5,29 +5,51 @@ var App = {
   currentCategory: null,
 
   goTo(screenName) {
-    document.querySelectorAll('.screen').forEach(s => {
-      s.classList.remove('active');
-    });
+
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     const screen = document.getElementById('screen-' + screenName);
     if (screen) {
       screen.classList.add('active');
       this.previousScreen = this.currentScreen;
       this.currentScreen = screenName;
+
     }
   },
 
   goBack() {
-    this.goTo(this.previousScreen);
+    if (this.previousScreen === 'loading' || this.previousScreen === 'auth') {
+      this.goTo('home');
+    } else {
+      this.goTo(this.previousScreen);
+    }
   },
 
   logout() {
     const user = FarmStorage.getUser();
     const name = user ? user.name : 'Farmer';
     window.speechSynthesis.cancel();
-    VoiceEngine.speak(`${name}, you are logging out. Goodbye.`).then(() => {
+    VoiceEngine.speak(`Goodbye ${name}. Your farm is safe.`).then(() => {
       FarmStorage.clearAll();
       location.reload();
     });
+  },
+
+
+  // Global command listener (called from VoiceEngine when needed)
+  handleGlobalCommand(command) {
+    const t = command.toLowerCase().trim();
+    if (t.includes('menu')) {
+      this.goTo('home');
+      Home.load();
+    } else if (t.includes('go back') || t.includes('previous')) {
+      this.goBack();
+    } else if (t.includes('logout') || t.includes('log out')) {
+      this.logout();
+    } else if (t.includes('repeat')) {
+      // Repeat will be handled by the current screen
+      return false;
+    }
+    return true;
   },
 
 
