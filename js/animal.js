@@ -142,9 +142,15 @@ var Animal = {
     this.readProfile();
   },
 
-  async readProfile() {
+  async readProfile(retries = 0) {
     const a = this.currentAnimal;
     if (!a) return;
+    if (retries > 3) {
+      App.goTo('livestock');
+      Livestock.load();
+      return;
+    }
+    
     const age = Vaccine.getAge(a.dob);
     const alerts = Vaccine.getAlerts(a);
     const alertText = alerts.length > 0 ?
@@ -162,7 +168,7 @@ var Animal = {
     await VoiceEngine.speak('What would you like to do? Say add to add another animal, livestock to go back, or menu to go to the main menu.');
     
     try {
-      const choice = await VoiceEngine.listen();
+      const choice = await VoiceEngine.listen(20000);
       const t = choice.toLowerCase().trim();
       
       if (t.includes('add')) {
@@ -171,14 +177,17 @@ var Animal = {
       } else if (t.includes('livestock')) {
         App.goTo('livestock');
         Livestock.load();
+      } else if (t.includes('menu')) {
+        App.goTo('home');
+        Home.load();
       } else {
-        // Default: listen again
-        this.readProfile();
+        // Retry with limit
+        await this.readProfile(retries + 1);
       }
     } catch (e) {
       if (e === 'aborted') return;
       await new Promise(r => setTimeout(r, 800));
-      this.readProfile();
+      await this.readProfile(retries + 1);
     }
   }
 };

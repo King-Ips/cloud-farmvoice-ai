@@ -55,7 +55,7 @@ var Livestock = {
 
   async listenForChoice(categories) {
     try {
-      const choice = await VoiceEngine.listen();
+      const choice = await VoiceEngine.listen(20000);
       console.log('Livestock choice:', choice);
 
       if (choice.includes('add')) {

@@ -7,8 +7,12 @@ var Assistant = {
 
   async sendMessage() {
     const input = document.getElementById('chat-input');
+    if (!input) return;
     const message = input.value.trim();
-    if (!message) return;
+    if (!message || message.length === 0) {
+      await VoiceEngine.speak('Please ask a question.');
+      return;
+    }
     input.value = '';
     this.addBubble(message, 'user');
     await this.getResponse(message);
@@ -37,38 +41,20 @@ var Assistant = {
     thinking.textContent = answer;
 
     const container = document.getElementById('chat-container');
-    container.scrollTop = container.scrollHeight;
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
 
     await VoiceEngine.speak(answer);
-
-    try {
-      const followUp = await VoiceEngine.ask('Say yes for another question, repeat to hear the answer again, or menu to go back.');
-      if (followUp.includes('menu')) {
-        App.goTo('home');
-        Home.load();
-      } else if (followUp.includes('repeat')) {
-        await VoiceEngine.speak(answer);
-        this.promptFollowUp(message);
-      } else if (followUp.includes('yes')) {
-        await VoiceEngine.speak('What is your question?');
-        this.voiceInput();
-      } else {
-        App.goTo('home');
-        Home.load();
-      }
-    } catch (e) {
-      console.error(e);
-    }
+    await this.promptFollowUp();
   },
 
-  async promptFollowUp(message) {
+  async promptFollowUp() {
     try {
-      const followUp = await VoiceEngine.ask('Say yes for another question, repeat to hear the answer again, or menu to go back.');
+      const followUp = await VoiceEngine.ask('Say yes for another question, repeat to hear the answer again, or menu to go back.', 20000);
       if (followUp.includes('menu')) {
         App.goTo('home');
         Home.load();
-      } else if (followUp.includes('repeat')) {
-        this.promptFollowUp(message);
       } else if (followUp.includes('yes')) {
         await VoiceEngine.speak('What is your question?');
         this.voiceInput();
@@ -77,7 +63,9 @@ var Assistant = {
         Home.load();
       }
     } catch (e) {
-      console.error(e);
+      console.error('Follow up error:', e);
+      App.goTo('home');
+      Home.load();
     }
   },
 

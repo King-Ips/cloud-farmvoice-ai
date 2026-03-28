@@ -25,13 +25,27 @@ var App = {
   },
 
   logout() {
-    const user = FarmStorage.getUser();
-    const name = user ? user.name : 'Farmer';
-    window.speechSynthesis.cancel();
-    VoiceEngine.speak(`Goodbye ${name}. Your farm is safe.`).then(() => {
+    try {
+      const user = FarmStorage.getUser();
+      const name = user ? user.name : 'Farmer';
+      
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+      
+      VoiceEngine.speak(`Goodbye ${name}. Your farm is safe.`).then(() => {
+        FarmStorage.clearAll();
+        location.reload();
+      }).catch((e) => {
+        console.error('Logout speak error:', e);
+        FarmStorage.clearAll();
+        location.reload();
+      });
+    } catch (e) {
+      console.error('Logout error:', e);
       FarmStorage.clearAll();
       location.reload();
-    });
+    }
   },
 
 

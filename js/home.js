@@ -53,7 +53,7 @@ var Home = {
 
   async listenForMainChoice() {
     try {
-      const choice = await VoiceEngine.listen();
+      const choice = await VoiceEngine.listen(20000);
       const t = choice.toLowerCase().trim();
       console.log('Main menu choice:', t);
 
