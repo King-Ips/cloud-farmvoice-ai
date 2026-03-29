@@ -58,26 +58,44 @@ var VoiceEngine = {
 
   checkGlobal(t) {
     if (t.includes('repeat')) {
-      if (this._lastMessage) this.speak(this._lastMessage);
-      return true;
+      return 'repeat';
     }
     if (t.includes('log out') || t.includes('logout') || t.includes('sign out')) {
       App.logout();
-      return true;
+      return 'route';
     }
     if (t.includes('go back') || t.includes('back')) {
       App.goBack();
-      return true;
+      return 'route';
     }
     if (t.includes('menu')) {
       App.goTo('home');
       Home.load();
-      return true;
+      return 'route';
     }
     return false;
   },
 
-  listen(timeoutMs = 15000) {
+  async listen(timeoutMs = 15000) {
+    while (true) {
+      const transcript = await this._listenOnce(timeoutMs);
+      const globalAction = this.checkGlobal(transcript);
+      if (globalAction) {
+        if (globalAction === 'repeat') {
+          if (this._lastMessage) {
+            await this.speak(this._lastMessage);
+            await new Promise(r => setTimeout(r, 350));
+          }
+          continue; // Listen again silently!
+        }
+        // It's a route action like go back, home, logout
+        throw 'handled_global';
+      }
+      return transcript;
+    }
+  },
+
+  _listenOnce(timeoutMs = 15000) {
     this.stopListening();
     return new Promise((resolve, reject) => {
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition || window.mozSpeechRecognition || window.msSpeechRecognition;
@@ -121,23 +139,12 @@ var VoiceEngine = {
           // Safety check: only process final results
           if (!latestResult.isFinal) return;
           
-          // Filter out low confidence noise
           const confidence = latestResult[0].confidence;
-          if (confidence < 0.5) {
-             console.log('Ignored low confidence result:', latestResult[0].transcript, confidence);
-             return;
-          }
           
           const transcript = latestResult[0].transcript.trim().toLowerCase();
           if (!transcript) return;
           
           console.log('Got final result:', transcript, 'Confidence:', confidence);
-
-          // Check for global commands first
-          if (this.checkGlobal(transcript)) {
-            finish(() => reject('handled_global'));
-            return;
-          }
 
           // Got a final result - resolve immediately and stop listening
           finish(() => resolve(transcript));
