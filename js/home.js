@@ -13,8 +13,10 @@ var Home = {
     let totalAnimals = 0;
     categories.forEach(cat => totalAnimals += FarmStorage.getAnimals(cat).length);
 
-document.getElementById('stat-animals').textContent = totalAnimals;
-    // Removed stat-categories - ID not in HTML
+    document.getElementById('stat-animals').textContent = totalAnimals;
+    
+    const crops = Crops ? Crops.getCrops() : [];
+    document.getElementById('stat-crops').textContent = crops.length;
 
     const alerts = Vaccine.getAllAlerts();
     document.getElementById('stat-vaccines').textContent = alerts.length;
@@ -45,11 +47,11 @@ document.getElementById('stat-animals').textContent = totalAnimals;
       message += `You have ${totalAnimals} animal${totalAnimals !== 1 ? 's' : ''} on your farm. `;
     }
     
-    // Announce crops and tracker as well
-    const crops = Crops ? Crops.getCrops() : [];
-    if (crops.length > 0) message += `You have ${crops.length} planted crop${crops.length !== 1 ? 's' : ''}. `;
+    // Announce crops
+    const cropsCount = Crops ? Crops.getCrops() : [];
+    if (cropsCount.length > 0) message += `You have ${cropsCount.length} planted crop${cropsCount.length !== 1 ? 's' : ''}. `;
 
-    message += `To manage your livestock, say livestock. To manage your crops, say crops. For the activity tracker, say tracker. For farming questions, say AI assistant.`;
+    message += `To manage your livestock, say livestock. To manage your crops, say crops. For farming questions, say AI assistant.`;
 
     await VoiceEngine.speak(message);
     this.listenForMainChoice();
@@ -76,11 +78,8 @@ document.getElementById('stat-animals').textContent = totalAnimals;
       } else if (t.includes('crop') || t.includes('plants')) {
         App.goTo('crops');
         Crops.load();
-      } else if (t.includes('track') || t.includes('activity')) {
-        App.goTo('tracker');
-        Tracker.load();
       } else {
-        await VoiceEngine.speak('Say livestock, crops, tracker, or AI assistant.');
+        await VoiceEngine.speak('Say livestock, crops, or AI assistant.');
         await this.listenForMainChoice(retries + 1);
       }
     } catch (e) {
