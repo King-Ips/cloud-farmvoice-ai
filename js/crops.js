@@ -48,9 +48,9 @@ var Crops = {
     if (crops.length === 0) {
       message = 'You have no crops planted. Say add to add a crop.';
     } else {
-      message = `You have ${crops.length} crop${crops.length !== 1 ? 's' : ''} planted. `;
+    message = `You have ${crops.length} crop${crops.length !== 1 ? 's' : ''} planted. `;
       crops.forEach(c => { message += `${c.name}. `; });
-      message += 'Say add to plant another, or delete to remove one.';
+      message += 'Say add to plant another, delete to remove, menu/back anytime.';
     }
     
     await VoiceEngine.speak(message);

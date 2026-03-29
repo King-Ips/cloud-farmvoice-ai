@@ -8,9 +8,9 @@
 - [x] 5. Global pulsing mic + transcript ✓
 - [x] 6. Tested: Voice login hears PIN/yes-no, menu livestock/crops works without breaks
 
-**App fixed: PIN listens/submits, menu/voice robust!** 🎉
+**App fixed: PIN listens/submits, menu/voice robust!** 
 
-## 🚀 SETUP TO RUN COMPLETE APP
+## SETUP TO RUN COMPLETE APP
 
 1. Install deps: `npm install`
 2. Get GEMINI API key: https://makersuite.google.com/app/apikey

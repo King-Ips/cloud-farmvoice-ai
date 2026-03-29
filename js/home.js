@@ -51,7 +51,8 @@ var Home = {
     const cropsCount = (window.Crops && typeof window.Crops.getCrops === 'function') ? Crops.getCrops() : [];
     if (cropsCount.length > 0) message += `You have ${cropsCount.length} planted crop${cropsCount.length !== 1 ? 's' : ''}. `;
 
-    message += `To manage your livestock, say livestock. To manage your crops, say crops. For farming questions, say AI assistant.`;
+    message += `To manage your livestock, say livestock. To manage your crops, say crops. For farming questions, say AI assistant. `;
+    message += `Say repeat anytime for options.`;
 
     await VoiceEngine.speak(message);
     await this.listenForMainChoice();

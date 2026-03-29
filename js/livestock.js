@@ -46,8 +46,9 @@ var Livestock = {
     }
 
     message += `To add a new animal to your farm, say add. `;
-    message += `To hear all your animals and vaccination details, say farm updates. `;
-    message += `To remove an animal or category, say delete.`;
+    message += `To hear all your animals and vaccination details, say farm updates or status. `;
+    message += `To remove an animal or category, say delete. `;
+    message += `Say menu, crops, assistant, back anytime.`;
 
     await VoiceEngine.speak(message);
     this.listenForChoice(categories);
