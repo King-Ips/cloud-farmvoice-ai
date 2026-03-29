@@ -121,10 +121,17 @@ var VoiceEngine = {
           // Safety check: only process final results
           if (!latestResult.isFinal) return;
           
+          // Filter out low confidence noise
+          const confidence = latestResult[0].confidence;
+          if (confidence < 0.5) {
+             console.log('Ignored low confidence result:', latestResult[0].transcript, confidence);
+             return;
+          }
+          
           const transcript = latestResult[0].transcript.trim().toLowerCase();
           if (!transcript) return;
           
-          console.log('Got final result:', transcript);
+          console.log('Got final result:', transcript, 'Confidence:', confidence);
 
           // Check for global commands first
           if (this.checkGlobal(transcript)) {

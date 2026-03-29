@@ -6,6 +6,10 @@
   <title>FarmVoice AI</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
+  
+  <!-- TensorFlow.js and COCO-SSD for lightweight client-side animal detection -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
 </head>
 <body>
 
@@ -181,7 +185,7 @@
     <div class="top-bar">
       <button class="back-btn" onclick="App.goTo('home')" aria-label="Go Back">←</button>
       <h2>My Livestock</h2>
-      <button class="icon-btn" onclick="Livestock.addCategory()" aria-label="Add Category">＋</button>
+<button class="icon-btn" onclick="Livestock.addCategory()" aria-label="Add Category">＋</button>
     </div>
 
     <div id="category-list" class="category-list" aria-live="polite">
@@ -276,18 +280,39 @@
         <span aria-hidden="true">🎤</span> Add by Voice
       </button>
 
-      <!-- Photo upload -->
+      <!-- Photo upload / Live Camera -->
       <div class="photo-section">
         <div class="photo-preview" id="photo-preview">
           <span aria-hidden="true">📷</span>
-          <span>Take or upload photo</span>
+          <span>Camera</span>
         </div>
-        <input type="file" id="photo-input" aria-label="Upload Photo" accept="image/*" capture="environment"
-               onchange="Vision.handlePhoto(this)" style="display:none">
-        <button class="btn-secondary" onclick="document.getElementById('photo-input').click()">
-          <span aria-hidden="true">📷</span> Add Photo
+        <button class="btn-secondary" onclick="Vision.openLiveCamera()">
+          <span aria-hidden="true">📷</span> Open Live Camera
         </button>
         <div id="breed-result" class="breed-result" style="display:none" aria-live="polite"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ── LIVE CAMERA SCREEN ─────────────────────────────────── -->
+  <main id="screen-camera" class="screen" role="main" aria-label="Live Camera">
+    <div class="top-bar">
+      <button class="back-btn" onclick="Vision.closeCamera()" aria-label="Go Back">←</button>
+      <h2>Camera</h2>
+      <div></div>
+    </div>
+    
+    <div style="position: relative; flex: 1; display: flex; flex-direction: column; background: #000; overflow: hidden;">
+      <video id="camera-video" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+      <div id="camera-overlay" style="position: absolute; inset: 0; pointer-events: none; border: 4px solid transparent; transition: border-color 0.3s; display: flex; align-items: center; justify-content: center;">
+        <div id="camera-target" style="width: 200px; height: 200px; border: 2px dashed rgba(255,255,255,0.5); border-radius: 20px;"></div>
+      </div>
+      <div id="camera-label" aria-live="polite" style="position: absolute; top: 16px; left: 16px; right: 16px; text-align: center; color: white; background: rgba(0,0,0,0.6); padding: 8px; border-radius: 8px; font-weight: bold;">
+        Point camera at the animal...
+      </div>
+      
+      <div style="position: absolute; bottom: 32px; left: 0; right: 0; display: flex; justify-content: center;">
+        <button id="capture-btn" disabled onclick="Vision.captureFrame()" style="width: 72px; height: 72px; border-radius: 50%; background: #ccc; border: 4px solid white; cursor: pointer; transition: background 0.3s; box-shadow: 0 4px 12px rgba(0,0,0,0.5);" aria-label="Capture Photo"></button>
       </div>
     </div>
   </main>

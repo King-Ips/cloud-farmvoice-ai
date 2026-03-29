@@ -13,8 +13,8 @@ var Home = {
     let totalAnimals = 0;
     categories.forEach(cat => totalAnimals += FarmStorage.getAnimals(cat).length);
 
-    document.getElementById('stat-categories').textContent = categories.length;
-    document.getElementById('stat-animals').textContent = totalAnimals;
+document.getElementById('stat-animals').textContent = totalAnimals;
+    // Removed stat-categories - ID not in HTML
 
     const alerts = Vaccine.getAllAlerts();
     document.getElementById('stat-vaccines').textContent = alerts.length;

@@ -13,6 +13,11 @@ var App = {
       this.previousScreen = this.currentScreen;
       this.currentScreen = screenName;
 
+      // Auto-load controllers to hydrate screens with data
+      if (screenName === 'home' && window.Home) Home.load();
+      if (screenName === 'livestock' && window.Livestock) Livestock.load();
+      if (screenName === 'crops' && window.Crops) Crops.load();
+      if (screenName === 'tracker' && window.Tracker) Tracker.load();
     }
   },
 
