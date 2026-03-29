@@ -1,6 +1,6 @@
 // Service Worker for FarmVoice AI - Offline Support
 
-const CACHE_NAME = 'farmvoice-v1';
+const CACHE_NAME = 'farmvoice-v2';
 const URLS_TO_CACHE = [
   '/',
   '/index.html',
