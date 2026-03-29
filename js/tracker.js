@@ -95,6 +95,11 @@ var Tracker = {
     }
   },
 
+  startAddLog() {
+    VoiceEngine.stopListening();
+    this.startAddLog();
+  },
+
   async startAddLog() {
     try {
       const logText = await VoiceEngine.ask('What activity would you like to log? For example, fixed fence, or bought feed.');

@@ -15,7 +15,7 @@ var Home = {
 
     document.getElementById('stat-animals').textContent = totalAnimals;
     
-    const crops = Crops ? Crops.getCrops() : [];
+    const crops = (window.Crops && typeof window.Crops.getCrops === 'function') ? Crops.getCrops() : [];
     document.getElementById('stat-crops').textContent = crops.length;
 
     const alerts = Vaccine.getAllAlerts();
@@ -48,7 +48,7 @@ var Home = {
     }
     
     // Announce crops
-    const cropsCount = Crops ? Crops.getCrops() : [];
+    const cropsCount = (window.Crops && typeof window.Crops.getCrops === 'function') ? Crops.getCrops() : [];
     if (cropsCount.length > 0) message += `You have ${cropsCount.length} planted crop${cropsCount.length !== 1 ? 's' : ''}. `;
 
     message += `To manage your livestock, say livestock. To manage your crops, say crops. For farming questions, say AI assistant.`;
@@ -58,33 +58,38 @@ var Home = {
   },
 
   async listenForMainChoice(retries = 0) {
-    if (retries > 3) {
-      await VoiceEngine.speak('No valid command received. Reloading home screen.');
+    if (retries > 2) {
+      await VoiceEngine.speak('Try again or say menu.');
       this.load();
       return;
     }
     
     try {
-      const choice = await VoiceEngine.listen(20000);
+      const choice = await VoiceEngine.listen(15000);
       const t = choice.toLowerCase().trim();
       console.log('Main menu choice:', t);
 
-      if (t.includes('livestock') || t.includes('animals') || t.includes('farm')) {
+      if (t.includes('live') || t.includes('stock') || t.includes('animal') || t.includes('farm')) {
         App.goTo('livestock');
         Livestock.load();
-      } else if (t.includes('ai') || t.includes('assistant') || t.includes('help')) {
+        VoiceEngine.speak('Livestock screen.');
+      } else if (t.includes('ai') || t.includes('assist') || t.includes('help') || t.includes('question')) {
         App.goTo('assistant');
         Assistant.load();
-      } else if (t.includes('crop') || t.includes('plants')) {
+        VoiceEngine.speak('AI assistant ready.');
+      } else if (t.includes('crop') || t.includes('plant')) {
         App.goTo('crops');
         Crops.load();
+        VoiceEngine.speak('Crops screen.');
       } else {
-        await VoiceEngine.speak('Say livestock, crops, or AI assistant.');
+        await VoiceEngine.speak('Say livestock, crops, or AI assistant. Clear and loud please.');
+        await new Promise(r => setTimeout(r, 500));
         await this.listenForMainChoice(retries + 1);
       }
     } catch (e) {
+      console.log('Listen error:', e);
       if (e === 'aborted' || e === 'handled_global') return;
-      await new Promise(r => setTimeout(r, 800));
+      await new Promise(r => setTimeout(r, 500));
       await this.listenForMainChoice(retries + 1);
     }
   },

@@ -232,7 +232,16 @@ var Livestock = {
 
   addCategory() {
     VoiceEngine.stopListening();
-    this.handleAddAnimal(FarmStorage.getCategories());
+    VoiceEngine.speak('What livestock category? Say cows, goats etc.').then(() => {
+      VoiceEngine.listen().then(catName => {
+        const formatted = catName.charAt(0).toUpperCase() + catName.slice(1).toLowerCase();
+        FarmStorage.addCategory(formatted);
+        this.load();
+        VoiceEngine.speak(`${formatted} category added.`);
+      }).catch(e => {
+        if (e !== 'handled_global') this.load();
+      });
+    });
   },
 
   getIcon(category) {

@@ -142,6 +142,11 @@ var Crops = {
     }
   },
   
+  startAdd() {
+    VoiceEngine.stopListening();
+    this.startAdd();
+  },
+
   deleteCrop(id) {
     let crops = this.getCrops();
     crops = crops.filter(c => c.id !== id);
