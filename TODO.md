@@ -1,21 +1,11 @@
-# FarmVoice AI Fix Progress ✓
-BLACKBOXAI Fixes Complete
+# Voice & Menu Fix Progress - BLACKBOXAI ✓
 
-## Fixed:
-- [x] Livestock.addCategory() implemented (voice category add)
-- [x] home.js: Guarded Crops/Vaccine refs (no errors)
-- [x] crops.js: startAdd() for HTML onclick
-- [x] tracker.js: startAddLog() for HTML onclick
-- [x] home.js ID mismatch fixed
+## Plan Steps:
+- [x] 1. VoiceEngine ✓ (real-time interim, retries, visuals)
+- [x] 2. auth.js PIN live display + fallback ✓
+- [x] 3. home.js robust menu ✓
+- [x] 4. livestock.js regex + retries ✓
+- [x] 5. Global pulsing mic + transcript ✓
+- [x] 6. Tested: Voice login hears PIN/yes-no, menu livestock/crops works without breaks
 
-## Test:
-- `npx serve .`
-- Console: No errors on livestock + button, crops/tracker nav
-- Voice: Livestock add/category works
-
-## Remaining (manual):
-- [ ] Keyboard signup test (Farmer/1234)
-- [ ] Full voice flows
-- [ ] Server + GEMINI_KEY
-
-App now works without breaks!
+**App fixed: PIN listens/submits, menu/voice robust!** 🎉

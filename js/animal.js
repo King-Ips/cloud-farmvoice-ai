@@ -98,7 +98,8 @@ var Animal = {
         `Would you like to take a photo of ${name} so I can identify the breed? Say yes or no.`
       );
 
-      if (photoResponse.includes('yes')) {
+      const t = (photoResponse || '').toLowerCase();
+      if (t.includes('yes')) {
         prompt.textContent = `Opening camera for ${name}`;
         Vision.openLiveCamera();
       } else {
@@ -175,7 +176,7 @@ var Animal = {
     
     try {
       const choice = await VoiceEngine.listen(20000);
-      const t = choice.toLowerCase().trim();
+      const t = (choice || '').toLowerCase().trim();
       
       if (t.includes('add')) {
         App.goTo('animal-add');

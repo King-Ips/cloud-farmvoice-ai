@@ -1,7 +1,7 @@
 var Assistant = {
 
   async load() {
-    await VoiceEngine.speak('AI Assistant ready. What is your farming question? You can ask about animal health, vaccination, feeding, or current farming news.');
+    await VoiceEngine.speak('AI assistant ready. Ask me anything about livestock, crops, or farming.');
     this.voiceInput();
   },
 
@@ -21,16 +21,17 @@ var Assistant = {
   async voiceInput(retries = 0) {
     const micBtn = document.getElementById('mic-btn');
     if (retries > 3) {
+      if (micBtn) micBtn.classList.remove('listening');
       await VoiceEngine.speak('Could not understand. Returning to main menu.');
       App.goTo('home');
       Home.load();
       return;
     }
     
-    micBtn.classList.add('listening');
+    if (micBtn) micBtn.classList.add('listening');
     try {
       const message = await VoiceEngine.listen();
-      micBtn.classList.remove('listening');
+      if (micBtn) micBtn.classList.remove('listening');
       if (!message) {
         await this.voiceInput(retries + 1);
         return;
@@ -38,7 +39,7 @@ var Assistant = {
       this.addBubble(message, 'user');
       await this.getResponse(message);
     } catch (e) {
-      micBtn.classList.remove('listening');
+      if (micBtn) micBtn.classList.remove('listening');
       if (e === 'handled_global') return;
       console.error('Voice input error:', e);
       await new Promise(r => setTimeout(r, 1000));
@@ -48,41 +49,67 @@ var Assistant = {
 
   async getResponse(message) {
     const thinking = this.addBubble('Thinking...', 'assistant');
-    const answer = await ClaudeAPI.askClaude(message);
-    thinking.textContent = answer;
 
-    const container = document.getElementById('chat-container');
-    if (container) {
-      container.scrollTop = container.scrollHeight;
+    try {
+      const answer = await ClaudeAPI.askClaude(message);
+
+      this.lastAnswer = answer;
+
+      thinking.textContent = answer;
+
+      const container = document.getElementById('chat-container');
+      if (container) {
+        container.scrollTop = container.scrollHeight;
+      }
+
+      await VoiceEngine.speak(answer);
+      await this.promptFollowUp();
+
+    } catch (e) {
+      console.error('Claude error:', e);
+
+      thinking.textContent = 'Sorry, I could not get a response.';
+
+      await VoiceEngine.speak('Sorry, I could not get a response.');
+      await this.voiceInput();
     }
-
-    await VoiceEngine.speak(answer);
-    await this.promptFollowUp();
   },
+
 
   async promptFollowUp() {
-    try {
-      const followUp = await VoiceEngine.ask('Say yes for another question, repeat to hear the answer again, or menu to go back.', 20000);
-      if (followUp.includes('menu')) {
-        App.goTo('home');
-        Home.load();
-      } else if (followUp.includes('yes')) {
-        await VoiceEngine.speak('What is your question?');
-        this.voiceInput();
-      } else {
-        App.goTo('home');
-        Home.load();
-      }
-    } catch (e) {
-      if (e === 'handled_global') return;
-      console.error('Follow up error:', e);
+  try {
+    const followUp = await VoiceEngine.ask(
+      'Say yes for another question, repeat to hear again, or menu to go back.',
+      20000
+    );
+
+    const f = (followUp || '').toLowerCase();
+
+    if (f.includes('menu')) {
       App.goTo('home');
       Home.load();
+    } else if (f.includes('yes')) {
+      await VoiceEngine.speak('What is your question?');
+      this.voiceInput();
+    } else if (f.includes('repeat')) {
+      await VoiceEngine.speak(this.lastAnswer || 'No previous answer.');
+      await this.promptFollowUp();
+    } else {
+      await VoiceEngine.speak('I did not catch that. Please say yes, repeat, or menu.');
+      await this.promptFollowUp();
     }
-  },
 
+  } catch (e) {
+    if (e === 'handled_global') return;
+    App.goTo('home');
+    Home.load();
+  }
+},
+
+  
   addBubble(text, sender) {
     const container = document.getElementById('chat-container');
+    if (!container) return { textContent: () => {} };
     const bubble = document.createElement('div');
     bubble.className = `chat-bubble ${sender}-bubble`;
     bubble.textContent = text;

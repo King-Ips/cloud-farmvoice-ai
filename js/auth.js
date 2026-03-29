@@ -47,12 +47,12 @@ var Auth = {
     await VoiceEngine.speak('Would you like to hear these instructions again? Say yes or no. If you do not respond, we will continue.');
     
     try {
-      const response = await VoiceEngine.listen(5000);
-      if (response && response.includes('yes')) {
-        await this.playGlobalIntroduction();
-      } else {
-        this.globalInstructionsShown = true;
-      }
+        const response = await VoiceEngine.listen();
+        if (response.toLowerCase().includes('yes')) {
+          await this.playGlobalIntroduction();
+        } else {
+          this.globalInstructionsShown = true;
+        }
     } catch(e) {
       this.globalInstructionsShown = true;
     }
@@ -137,26 +137,35 @@ var Auth = {
         const promptText = attempts === 0 
            ? `Welcome back ${user.name}. Please say your 4 digit PIN. For example: 1 2 3 4.` 
            : `Please say your 4 digit PIN again.`;
-        const response = await VoiceEngine.ask(promptText, 25000);
-        const pin = this._extractPin(response).slice(0, 4);
+           const response = await VoiceEngine.ask(promptText);
+           if (!response) {
+            await VoiceEngine.speak("I didn't catch that. Try again.");
+            continue;
+          }
+        const extractedPin = this._extractPin(response).slice(0, 4);
+        document.getElementById('pin-display').textContent = '●'.repeat(extractedPin.length) + '_'.repeat(4 - extractedPin.length);
         
-        if (pin.length === 4 && FarmStorage.verifyPin(pin, user.pinHash)) {
-          await VoiceEngine.speak('PIN accepted. Logging you in.');
+        if (extractedPin.length === 4 && FarmStorage.verifyPin(extractedPin, user.pinHash)) {
+          await VoiceEngine.speak('PIN accepted. Logging in.');
           await this.speakGlobalInstructions(user.name);
           return;
-        } else if (pin.length === 4) {
+        } else if (extractedPin.length === 4) {
           attempts++;
           if (attempts < 3) {
-            await VoiceEngine.speak('Incorrect PIN. Please try again.');
+            await VoiceEngine.speak('Wrong PIN. Try again.');
           } else {
-            await VoiceEngine.speak('Too many failed attempts. Please use the keyboard to enter your PIN.');
+            document.getElementById('pin-display').textContent = '_ _ _ _';
+            await VoiceEngine.speak('Max attempts. Use keyboard PIN.');
+            this.showLogin();
           }
         } else {
           attempts++;
           if (attempts < 3) {
-            await VoiceEngine.speak('I could not hear a clear 4 digit PIN. Please try again.');
+            await VoiceEngine.speak('Need clear 4-digit PIN. Try again.');
           } else {
-            await VoiceEngine.speak('Too many failed attempts. Please use the keyboard to enter your PIN.');
+            document.getElementById('pin-display').textContent = '_ _ _ _';
+            await VoiceEngine.speak('Max attempts. Use keyboard.');
+            this.showLogin();
           }
         }
       } catch (e) {
