@@ -415,5 +415,14 @@
   <script src="js/assistant.js"></script>
   <script src="js/app.js"></script>
 
+  <script>
+    // Menu fix: Improve recognition tolerance
+    const originalListen = VoiceEngine.listen;
+    VoiceEngine.listen = (timeout = 15000) => originalListen(timeout).catch(e => {
+      if (e === 'no-speech' || e === 'aborted') return 'silence';
+      throw e;
+    });
+  </script>
+
 </body>
 </html>
