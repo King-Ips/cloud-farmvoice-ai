@@ -11,10 +11,24 @@ var Auth = {
     return /^[a-zA-Z\s'-]+$/.test(name);
   },
 
+  _extractPin(str) {
+    if (!str) return '';
+    const map = {
+      'zero': '0', 'one': '1', 'two': '2', 'three': '3', 'four': '4',
+      'five': '5', 'six': '6', 'seven': '7', 'eight': '8', 'nine': '9',
+      'oh': '0'
+    };
+    let result = str.toLowerCase();
+    for (const [word, digit] of Object.entries(map)) {
+      const regex = new RegExp(`\\b${word}\\b`, 'g');
+      result = result.replace(regex, digit);
+    }
+    return result.replace(/\D/g, '');
+  },
+
   _validatePin(pin) {
     if (!pin || typeof pin !== 'string') return false;
-    const cleaned = pin.replace(/\D/g, '');
-    return cleaned.length === 4;
+    return this._extractPin(pin).length >= 4;
   },
 
   _sanitizeName(name) {
@@ -106,8 +120,6 @@ var Auth = {
     if (!this.globalInstructionsShown) {
       await this.playGlobalIntroduction();
     }
-    await VoiceEngine.speak(`Welcome back ${user.name}. Please say your 4 digit PIN.`);
-    await new Promise(r => setTimeout(r, 500));
     await this.listenForPin();
   },
 
@@ -118,20 +130,39 @@ var Auth = {
       await this.startRegistration();
       return;
     }
-    try {
-      const response = await VoiceEngine.listen(20000);  // 20 second timeout for PIN entry
-      const pin = response.replace(/\D/g, '').slice(0, 4);
-      if (FarmStorage.verifyPin(pin, user.pinHash)) {
-        await VoiceEngine.speak('PIN accepted.');
-        await this.speakGlobalInstructions(user.name);
-      } else {
-        await VoiceEngine.speak('Incorrect PIN. Please try again.');
-        // Don't infinitely loop on error, let them use the pin pad
+    
+    let attempts = 0;
+    while (attempts < 3) {
+      try {
+        const promptText = attempts === 0 
+           ? `Welcome back ${user.name}. Please say your 4 digit PIN. For example: 1 2 3 4.` 
+           : `Please say your 4 digit PIN.`;
+        const response = await VoiceEngine.ask(promptText, 25000);
+        const pin = this._extractPin(response).slice(0, 4);
+        
+        if (pin.length === 4 && FarmStorage.verifyPin(pin, user.pinHash)) {
+          await VoiceEngine.speak('PIN accepted.');
+          await this.speakGlobalInstructions(user.name);
+          return;
+        } else {
+          attempts++;
+          if (attempts < 3) {
+            await VoiceEngine.speak('Incorrect PIN. Please try again.');
+          } else {
+            await VoiceEngine.speak('Too many failed attempts. Please use the keyboard to enter your PIN.');
+          }
+        }
+      } catch (e) {
+        if (e === 'handled_global') return;
+        
+        attempts++;
+        console.warn('Voice pin entry failed or timed out:', e);
+        if (attempts < 3) {
+          await VoiceEngine.speak('I did not catch that clearly. Please try again.');
+        } else {
+          await VoiceEngine.speak('Too many failed attempts. Please use the keyboard to enter your PIN.');
+        }
       }
-    } catch (e) {
-      if (e === 'handled_global') return;
-      console.warn('Voice pin entry failed or timed out:', e);
-      // Let them use the manual PIN pad
     }
   },
 
@@ -187,60 +218,76 @@ var Auth = {
       if (!this.globalInstructionsShown) {
         await this.playGlobalIntroduction();
       }
-      prompt.textContent = 'Listening for your first name...';
+      
+      let name = '';
       this.setDot(0);
-      const nameRaw = await VoiceEngine.ask('What is your first name?', 25000);
-      
-      if (!this._validateName(nameRaw)) {
-        await VoiceEngine.speak('I could not understand that name. Let us try again.');
-        await this.startRegistration();
-        return;
+      while (!name) {
+        prompt.textContent = 'Listening for your first name...';
+        try {
+          const nameRaw = await VoiceEngine.ask('What is your first name?', 25000);
+          if (this._validateName(nameRaw)) {
+            name = this._sanitizeName(nameRaw);
+            prompt.textContent = `First name: ${name}`;
+            await VoiceEngine.speak(`Nice to meet you ${name}.`);
+          } else {
+            await VoiceEngine.speak('I could not understand that name. Let us try again.');
+          }
+        } catch(e) {
+          if (e === 'handled_global') return;
+          console.warn('Name input error:', e);
+          await VoiceEngine.speak('I did not catch your name clearly. Let us try again.');
+        }
       }
-      const name = this._sanitizeName(nameRaw);
-      prompt.textContent = `First name: ${name}`;
-      await VoiceEngine.speak(`Nice to meet you ${name}.`);
 
+      let surname = '';
       this.setDot(1);
-      prompt.textContent = 'Listening for your surname...';
-      const surnameRaw = await VoiceEngine.ask('What is your surname?', 25000);
-      
-      if (!this._validateName(surnameRaw)) {
-        await VoiceEngine.speak('I could not understand that surname. Let us try again.');
-        await this.startRegistration();
-        return;
+      while (!surname) {
+        prompt.textContent = 'Listening for your surname...';
+        try {
+          const surnameRaw = await VoiceEngine.ask('What is your surname?', 25000);
+          if (this._validateName(surnameRaw)) {
+            surname = this._sanitizeName(surnameRaw);
+            prompt.textContent = `Name: ${name} ${surname}`;
+            await VoiceEngine.speak(`${name} ${surname}. Great.`);
+          } else {
+            await VoiceEngine.speak('I could not understand that surname. Let us try again.');
+          }
+        } catch(e) {
+          if (e === 'handled_global') return;
+          console.warn('Surname input error:', e);
+          await VoiceEngine.speak('I did not catch your surname clearly. Let us try again.');
+        }
       }
-      const surname = this._sanitizeName(surnameRaw);
-      prompt.textContent = `Name: ${name} ${surname}`;
-      await VoiceEngine.speak(`${name} ${surname}. Great.`);
 
+      let pin = '';
       this.setDot(2);
-      prompt.textContent = 'Listening for your PIN...';
-      const pinRaw = await VoiceEngine.ask('Please say a 4 digit PIN. For example: 1 2 3 4.', 25000);
-      
-      if (!this._validatePin(pinRaw)) {
-        await VoiceEngine.speak('I could not hear a clear 4 digit PIN. Let us try again.');
-        await this.startRegistration();
-        return;
-      }
-      const pin = pinRaw.replace(/\D/g, '').slice(0, 4);
-
-      if (pin.length < 4) {
-        await VoiceEngine.speak('I could not hear a clear PIN. Let us try again.');
-        await this.startRegistration();
-        return;
-      }
-
-      const confirmRaw = await VoiceEngine.ask(`You said ${pin.split('').join(' ')}. Say yes to confirm or no to try again.`, 20000);
-      if (confirmRaw.includes('no')) {
-        await VoiceEngine.speak('No problem. Let us try again.');
-        await this.startRegistration();
-        return;
+      while (!pin) {
+        prompt.textContent = 'Listening for your PIN...';
+        try {
+          const pinRaw = await VoiceEngine.ask('Please say a 4 digit PIN. For example: 1 2 3 4.', 25000);
+          if (this._validatePin(pinRaw)) {
+            const extracted = this._extractPin(pinRaw);
+            const tempPin = extracted.slice(0, 4);
+            const confirmRaw = await VoiceEngine.ask(`You said ${tempPin.split('').join(' ')}. Say yes to confirm or no to try again.`, 20000);
+            if (confirmRaw.includes('no')) {
+              await VoiceEngine.speak('No problem. Let us try again.');
+            } else {
+              pin = tempPin;
+            }
+          } else {
+            await VoiceEngine.speak('I could not hear a clear 4 digit PIN. Let us try again.');
+          }
+        } catch(e) {
+          if (e === 'handled_global') return;
+          console.warn('Pin input error:', e);
+          await VoiceEngine.speak('I did not catch your PIN clearly. Let us try again.');
+        }
       }
 
       const saved = FarmStorage.saveUser(name, surname, pin);
       if (!saved) {
         await VoiceEngine.speak('Failed to save your account. Please try again.');
-        await this.startRegistration();
+        prompt.textContent = 'Failed to save account.';
         return;
       }
       
