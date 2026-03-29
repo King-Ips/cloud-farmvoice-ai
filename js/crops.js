@@ -67,11 +67,12 @@ var Crops = {
     
     try {
       const choice = await VoiceEngine.listen();
-      if (choice.includes('add')) {
+      const t = (choice || '').toLowerCase();
+      if (t.includes('add')) {
         await this.startAdd();
         return;
       }
-      if (choice.includes('delete') || choice.includes('remove')) {
+      if (t.includes('delete') || t.includes('remove')) {
         await this.handleDelete(crops);
         return;
       }
@@ -121,7 +122,8 @@ var Crops = {
       const names = crops.map(c => c.name).join(', ');
       const choice = await VoiceEngine.ask(`Which crop would you like to delete? You have ${names}.`);
       
-      const crop = crops.find(c => choice.includes(c.name.toLowerCase()));
+      const t = (choice || '').toLowerCase();
+      const crop = crops.find(c => t.includes(c.name.toLowerCase()));
       if (!crop) {
         await VoiceEngine.speak('Crop not found.');
         this.load();
@@ -141,11 +143,7 @@ var Crops = {
       this.load();
     }
   },
-  
-  startAdd() {
-    VoiceEngine.stopListening();
-    this.startAdd();
-  },
+
 
   deleteCrop(id) {
     let crops = this.getCrops();

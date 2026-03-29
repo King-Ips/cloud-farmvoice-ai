@@ -156,6 +156,40 @@ body {
   font-weight: 700;
 }
 
+.global-mic {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  background: var(--green);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 18px;
+  z-index: 1000;
+  box-shadow: 0 2px 10px rgba(45,106,79,0.4);
+  transition: all 0.3s;
+}
+
+.global-mic.listening {
+  animation: pulse-mic 1.2s infinite;
+  background: var(--danger);
+  font-size: 16px;
+  min-width: 120px;
+  padding: 0 12px;
+  border-radius: 20px;
+  position: absolute;
+  text-align: center;
+}
+
+@keyframes pulse-mic {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239,68,68,0.7); }
+  50% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(239,68,68,0); }
+}
+
 /* ── AUTH SCREEN ──────────────────────────────────────────── */
 #screen-auth {
   background: linear-gradient(160deg, var(--green) 0%, var(--green-light) 60%, var(--gray-light) 100%);

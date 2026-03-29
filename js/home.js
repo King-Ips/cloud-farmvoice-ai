@@ -54,45 +54,46 @@ var Home = {
     message += `To manage your livestock, say livestock. To manage your crops, say crops. For farming questions, say AI assistant.`;
 
     await VoiceEngine.speak(message);
-    this.listenForMainChoice();
+    await this.listenForMainChoice();
   },
 
-  async listenForMainChoice(retries = 0) {
-    if (retries > 2) {
-      await VoiceEngine.speak('Try again or say menu.');
-      this.load();
+  async listenForMainChoice() {
+  for (let i = 0; i < 5; i++)
+    {
+    const choice = await VoiceEngine.listen();
+
+    if (!choice) {
+      await VoiceEngine.speak("I didn't hear you. Say livestock, crops, or assistant.");
+      continue;
+    }
+
+    const t = choice.toLowerCase();
+
+    if (t.includes('live') || t.includes('animal')) {
+      App.goTo('livestock');
+      Livestock.load();
+      await VoiceEngine.speak('Opening livestock');
       return;
     }
-    
-    try {
-      const choice = await VoiceEngine.listen(15000);
-      const t = choice.toLowerCase().trim();
-      console.log('Main menu choice:', t);
 
-      if (t.includes('live') || t.includes('stock') || t.includes('animal') || t.includes('farm')) {
-        App.goTo('livestock');
-        Livestock.load();
-        VoiceEngine.speak('Livestock screen.');
-      } else if (t.includes('ai') || t.includes('assist') || t.includes('help') || t.includes('question')) {
-        App.goTo('assistant');
-        Assistant.load();
-        VoiceEngine.speak('AI assistant ready.');
-      } else if (t.includes('crop') || t.includes('plant')) {
-        App.goTo('crops');
-        Crops.load();
-        VoiceEngine.speak('Crops screen.');
-      } else {
-        await VoiceEngine.speak('Say livestock, crops, or AI assistant. Clear and loud please.');
-        await new Promise(r => setTimeout(r, 500));
-        await this.listenForMainChoice(retries + 1);
-      }
-    } catch (e) {
-      console.log('Listen error:', e);
-      if (e === 'aborted' || e === 'handled_global') return;
-      await new Promise(r => setTimeout(r, 500));
-      await this.listenForMainChoice(retries + 1);
+    if (t.includes('crop')) {
+      App.goTo('crops');
+      Crops.load();
+      await VoiceEngine.speak('Opening crops');
+      return;
     }
-  },
+
+    if (t.includes('assistant') || t.includes('ai')) {
+      App.goTo('assistant');
+      Assistant.load();
+      await VoiceEngine.speak('Opening assistant');
+      return;
+    }
+
+    await VoiceEngine.speak("Say livestock, crops, or assistant.");
+  }
+},
+
 
   loadRecentAnimals(categories) {
     const container = document.getElementById('recent-animals');

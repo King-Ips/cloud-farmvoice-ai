@@ -53,22 +53,7 @@ var App = {
   },
 
 
-  // Global command listener (called from VoiceEngine when needed)
-  handleGlobalCommand(command) {
-    const t = command.toLowerCase().trim();
-    if (t.includes('menu')) {
-      this.goTo('home');
-      Home.load();
-    } else if (t.includes('go back') || t.includes('previous')) {
-      this.goBack();
-    } else if (t.includes('logout') || t.includes('log out')) {
-      this.logout();
-    } else if (t.includes('repeat')) {
-      // Repeat will be handled by the current screen
-      return false;
-    }
-    return true;
-  },
+  // REMOVED: handleGlobalCommand - VoiceEngine handles globals
 
 
   async start() {

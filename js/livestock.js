@@ -54,36 +54,40 @@ var Livestock = {
   },
 
   async listenForChoice(categories, retries = 0) {
-    if (retries > 3) {
-      await VoiceEngine.speak('No valid command. Returning to home.');
-      App.goTo('home');
-      Home.load();
+    if (retries > 4) {
+      await VoiceEngine.speak('No valid command. Returning home.');
+      App.goTo('home'); Home.load();
       return;
     }
     
     try {
-      const choice = await VoiceEngine.listen(20000);
-      console.log('Livestock choice:', choice);
+      const choice = await VoiceEngine.listen();
+      const t = choice.toLowerCase().trim();
+      console.log('Livestock choice:', t);
 
-      if (choice.includes('add')) {
-        await this.handleAddAnimal(categories);
-        return;
+      if (/add|new/i.test(t)) {
+        await this.handleAddAnimal(categories); return;
       }
-      if (choice.includes('farm update') || choice.includes('read') || choice.includes('update')) {
-        await this.readAllAnimals(categories);
-        return;
+      if (/update|read|report|status/i.test(t)) {
+        await this.readAllAnimals(categories); return;
       }
-      if (choice.includes('delete') || choice.includes('remove')) {
-        await this.handleDelete(categories);
-        return;
+      if (/delete|remove|del/i.test(t)) {
+        await this.handleDelete(categories); return;
       }
-
-      await VoiceEngine.speak('Say add to add an animal, farm updates to hear all animals, or delete to remove one.');
+      if (!t) {
+        await VoiceEngine.speak('Listening. Say add, updates, or delete.');
+        return this.listenForChoice(categories, retries + 1);
+      }
+      
+      await VoiceEngine.speak(`Did not understand (${retries+1}/4). Say add, farm updates, or delete.`);
+      await new Promise(r => setTimeout(r, 500));
       await this.listenForChoice(categories, retries + 1);
-
     } catch (e) {
-      if (e === 'aborted' || e === 'handled_global') return;
-      await new Promise(r => setTimeout(r, 800));
+      if (e === 'handled_global' || e === 'timeout') {
+        await this.listenForChoice(categories, retries);
+        return;
+      }
+      await new Promise(r => setTimeout(r, 600));
       await this.listenForChoice(categories, retries + 1);
     }
   },

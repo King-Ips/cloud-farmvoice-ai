@@ -76,11 +76,12 @@ var Tracker = {
     
     try {
       const choice = await VoiceEngine.listen();
-      if (choice.includes('add')) {
+      const t = (choice || '').toLowerCase();
+      if (t.includes('add')) {
         await this.startAddLog();
         return;
       }
-      if (choice.includes('menu') || choice.includes('home')) {
+      if (t.includes('menu') || t.includes('home')) {
         App.goTo('home');
         Home.load();
         return;
