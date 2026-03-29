@@ -99,8 +99,8 @@ var Animal = {
       );
 
       if (photoResponse.includes('yes')) {
-        prompt.textContent = `Tap Add Photo to take a photo of ${name}`;
-        await VoiceEngine.speak('Please tap the Add Photo button to take or upload a photo.');
+        prompt.textContent = `Opening camera for ${name}`;
+        Vision.openLiveCamera();
       } else {
         // Show animal profile to user
         this.viewProfile(category || 'General', animal.id);

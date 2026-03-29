@@ -230,6 +230,11 @@ var Livestock = {
     Animal.loadList(category);
   },
 
+  addCategory() {
+    VoiceEngine.stopListening();
+    this.handleAddAnimal(FarmStorage.getCategories());
+  },
+
   getIcon(category) {
     const icons = {
       'Cows': '🐄', 'Cattle': '🐄', 'Goats': '🐐',
