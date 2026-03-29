@@ -136,18 +136,25 @@ var Auth = {
       try {
         const promptText = attempts === 0 
            ? `Welcome back ${user.name}. Please say your 4 digit PIN. For example: 1 2 3 4.` 
-           : `Please say your 4 digit PIN.`;
+           : `Please say your 4 digit PIN again.`;
         const response = await VoiceEngine.ask(promptText, 25000);
         const pin = this._extractPin(response).slice(0, 4);
         
         if (pin.length === 4 && FarmStorage.verifyPin(pin, user.pinHash)) {
-          await VoiceEngine.speak('PIN accepted.');
+          await VoiceEngine.speak('PIN accepted. Logging you in.');
           await this.speakGlobalInstructions(user.name);
           return;
-        } else {
+        } else if (pin.length === 4) {
           attempts++;
           if (attempts < 3) {
             await VoiceEngine.speak('Incorrect PIN. Please try again.');
+          } else {
+            await VoiceEngine.speak('Too many failed attempts. Please use the keyboard to enter your PIN.');
+          }
+        } else {
+          attempts++;
+          if (attempts < 3) {
+            await VoiceEngine.speak('I could not hear a clear 4 digit PIN. Please try again.');
           } else {
             await VoiceEngine.speak('Too many failed attempts. Please use the keyboard to enter your PIN.');
           }
@@ -220,8 +227,9 @@ var Auth = {
       }
       
       let name = '';
+      let nameAttempts = 0;
       this.setDot(0);
-      while (!name) {
+      while (!name && nameAttempts < 3) {
         prompt.textContent = 'Listening for your first name...';
         try {
           const nameRaw = await VoiceEngine.ask('What is your first name?', 25000);
@@ -230,18 +238,32 @@ var Auth = {
             prompt.textContent = `First name: ${name}`;
             await VoiceEngine.speak(`Nice to meet you ${name}.`);
           } else {
-            await VoiceEngine.speak('I could not understand that name. Let us try again.');
+            nameAttempts++;
+            if (nameAttempts < 3) {
+              await VoiceEngine.speak('I could not understand that name. Let us try again.');
+              await new Promise(r => setTimeout(r, 500));
+            }
           }
         } catch(e) {
           if (e === 'handled_global') return;
+          nameAttempts++;
           console.warn('Name input error:', e);
-          await VoiceEngine.speak('I did not catch your name clearly. Let us try again.');
+          if (nameAttempts < 3) {
+            await VoiceEngine.speak('I did not catch your name clearly. Let us try again.');
+            await new Promise(r => setTimeout(r, 1000));
+          }
         }
+      }
+      if (!name) {
+        await VoiceEngine.speak('Too many failed attempts. Please use the keyboard to register.');
+        this.showKeyboardRegistration();
+        return;
       }
 
       let surname = '';
+      let surnameAttempts = 0;
       this.setDot(1);
-      while (!surname) {
+      while (!surname && surnameAttempts < 3) {
         prompt.textContent = 'Listening for your surname...';
         try {
           const surnameRaw = await VoiceEngine.ask('What is your surname?', 25000);
@@ -250,38 +272,83 @@ var Auth = {
             prompt.textContent = `Name: ${name} ${surname}`;
             await VoiceEngine.speak(`${name} ${surname}. Great.`);
           } else {
-            await VoiceEngine.speak('I could not understand that surname. Let us try again.');
+            surnameAttempts++;
+            if (surnameAttempts < 3) {
+              await VoiceEngine.speak('I could not understand that surname. Let us try again.');
+              await new Promise(r => setTimeout(r, 500));
+            }
           }
         } catch(e) {
           if (e === 'handled_global') return;
+          surnameAttempts++;
           console.warn('Surname input error:', e);
-          await VoiceEngine.speak('I did not catch your surname clearly. Let us try again.');
+          if (surnameAttempts < 3) {
+            await VoiceEngine.speak('I did not catch your surname clearly. Let us try again.');
+            await new Promise(r => setTimeout(r, 1000));
+          }
         }
+      }
+      if (!surname) {
+        await VoiceEngine.speak('Too many failed attempts. Please use the keyboard to register.');
+        this.showKeyboardRegistration();
+        return;
       }
 
       let pin = '';
+      let pinAttempts = 0;
       this.setDot(2);
-      while (!pin) {
+      while (!pin && pinAttempts < 3) {
         prompt.textContent = 'Listening for your PIN...';
         try {
           const pinRaw = await VoiceEngine.ask('Please say a 4 digit PIN. For example: 1 2 3 4.', 25000);
           if (this._validatePin(pinRaw)) {
             const extracted = this._extractPin(pinRaw);
             const tempPin = extracted.slice(0, 4);
-            const confirmRaw = await VoiceEngine.ask(`You said ${tempPin.split('').join(' ')}. Say yes to confirm or no to try again.`, 20000);
-            if (confirmRaw.includes('no')) {
-              await VoiceEngine.speak('No problem. Let us try again.');
-            } else {
-              pin = tempPin;
+            try {
+              const confirmRaw = await VoiceEngine.ask(`You said ${tempPin.split('').join(' ')}. Say yes to confirm or no to try again.`, 20000);
+              if (confirmRaw.includes('yes')) {
+                pin = tempPin;
+                await VoiceEngine.speak('PIN confirmed. Setting up your account.');
+              } else if (confirmRaw.includes('no')) {
+                await VoiceEngine.speak('No problem. Let us try again.');
+                await new Promise(r => setTimeout(r, 500));
+              } else {
+                pinAttempts++;
+                if (pinAttempts < 3) {
+                  await VoiceEngine.speak('I did not catch your response. Please say yes to confirm or no to try again.');
+                  await new Promise(r => setTimeout(r, 500));
+                }
+              }
+            } catch (confirmError) {
+              if (confirmError === 'handled_global') return;
+              console.warn('PIN confirmation error:', confirmError);
+              pinAttempts++;
+              if (pinAttempts < 3) {
+                await VoiceEngine.speak('I did not catch your response clearly. Let us try the PIN again.');
+                await new Promise(r => setTimeout(r, 1000));
+              }
             }
           } else {
-            await VoiceEngine.speak('I could not hear a clear 4 digit PIN. Let us try again.');
+            pinAttempts++;
+            if (pinAttempts < 3) {
+              await VoiceEngine.speak('I could not hear a clear 4 digit PIN. Let us try again.');
+              await new Promise(r => setTimeout(r, 500));
+            }
           }
         } catch(e) {
           if (e === 'handled_global') return;
+          pinAttempts++;
           console.warn('Pin input error:', e);
-          await VoiceEngine.speak('I did not catch your PIN clearly. Let us try again.');
+          if (pinAttempts < 3) {
+            await VoiceEngine.speak('I did not catch your PIN clearly. Let us try again.');
+            await new Promise(r => setTimeout(r, 1000));
+          }
         }
+      }
+      if (!pin) {
+        await VoiceEngine.speak('Too many failed attempts. Please use the keyboard to register.');
+        this.showKeyboardRegistration();
+        return;
       }
 
       const saved = FarmStorage.saveUser(name, surname, pin);

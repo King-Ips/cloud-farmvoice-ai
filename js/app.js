@@ -17,7 +17,6 @@ var App = {
       if (screenName === 'home' && window.Home) Home.load();
       if (screenName === 'livestock' && window.Livestock) Livestock.load();
       if (screenName === 'crops' && window.Crops) Crops.load();
-      if (screenName === 'tracker' && window.Tracker) Tracker.load();
     }
   },
 

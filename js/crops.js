@@ -100,9 +100,6 @@ var Crops = {
         plantedDate: plantedDate
       });
       this.saveCrops(crops);
-      
-      if (window.Tracker) Tracker.logActivity(`Planted new crop: ${name}`);
-
       await VoiceEngine.speak(`${name} has been added to your crops.`);
       this.load();
     } catch(e) {
@@ -147,12 +144,8 @@ var Crops = {
   
   deleteCrop(id) {
     let crops = this.getCrops();
-    const removed = crops.find(c => c.id === id);
     crops = crops.filter(c => c.id !== id);
     this.saveCrops(crops);
-    if (removed && window.Tracker) {
-      Tracker.logActivity(`Harvested/Removed crop: ${removed.name}`);
-    }
     this.load();
   }
 };
