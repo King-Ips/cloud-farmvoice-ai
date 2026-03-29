@@ -441,11 +441,14 @@
     });
     
     // Improved listen wrapper
-    const originalListen = VoiceEngine.listen;
-    VoiceEngine.listen = (timeout) => originalListen(timeout).catch(e => {
-      if (e === 'timeout' || e === '' || e === 'no-speech') return '';
-      throw e;
-    });
+    // const originalListen = VoiceEngine.listen();
+    
+    
+    // VoiceEngine.listen = (timeout) => originalListen(timeout).catch(e => {
+    //   if (e === 'timeout' || e === '' || e === 'no-speech') return '';
+    //   throw e;
+    // });
+
   </script>
   <script>
   document.addEventListener('voice:result', e => {
